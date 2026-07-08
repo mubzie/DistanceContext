@@ -53,7 +53,7 @@ export function DistanceInput({
               Travel mode
             </span>
             <select
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
               value={travelMode}
               onChange={(event) => setTravelMode(event.target.value)}
             >
@@ -72,7 +72,7 @@ export function DistanceInput({
                   type="number"
                   min="0"
                   step="0.1"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
                   value={distanceValue}
                   onChange={(event) => setDistanceValue(event.target.value)}
                 />
@@ -80,7 +80,7 @@ export function DistanceInput({
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">Unit</span>
                 <select
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
                   value={distanceUnit}
                   onChange={(event) => setDistanceUnit(event.target.value)}
                 >
@@ -132,7 +132,7 @@ export function DistanceInput({
                 setCustomStart(route.start);
                 setCustomEnd(route.end);
               }}
-              className={`rounded-3xl border px-4 py-4 text-left transition ${
+              className={`rounded-lg border px-4 py-4 text-left transition ${
                 selectedRouteId === route.id
                   ? "border-slate-900 bg-slate-900 text-white"
                   : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
