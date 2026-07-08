@@ -19,7 +19,7 @@ export function DistanceInput({
 }) {
   return (
     <section className="mx-auto w-full max-w-4xl rounded-[.5rem] bg-white p-6 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)] sm:p-8">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col items-center gap-6">
         <div className="space-y-2 text-center">
           <p className="text-sm font-medium uppercase tracking-[0.25em] text-slate-500">
             DistanceContext
@@ -33,7 +33,7 @@ export function DistanceInput({
           </p>
         </div>
 
-        <div className="flex items-center justify-center rounded-full bg-slate-100 p-1">
+        <div className="flex items-center w-max justify-center rounded-full bg-slate-100 p-1">
           <TabButton
             active={mode === "distance"}
             onClick={() => setMode("distance")}
@@ -163,7 +163,9 @@ function TabButton({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition ${
-        active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+        active
+          ? "bg-white text-slate-900 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)]"
+          : "text-slate-500"
       }`}
     >
       {children}
