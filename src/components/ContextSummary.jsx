@@ -16,7 +16,7 @@ export function ContextSummary({
 
   return (
     <section className="space-y-4">
-      <div className="rounded-[2rem] bg-slate-900 p-6 text-white shadow-soft sm:p-8">
+      <div className="rounded-lg bg-slate-900 p-6 text-white sm:p-8">
         <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
           Context
         </p>
@@ -40,7 +40,7 @@ export function ContextSummary({
         </MetricCard>
       </div>
 
-      <div className="rounded-[2rem] bg-white p-6 shadow-soft ring-1 ring-slate-200/80">
+      <div className="rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
           <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
             {travelMode === "walking" ? "Walking" : "Driving / Transit"}
@@ -64,7 +64,7 @@ export function ContextSummary({
 
 function MetricCard({ icon, label, children }) {
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200/80">
+    <div className="rounded-lg bg-white p-5 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)]">
       <div className="flex items-center gap-2 text-sm text-slate-500">
         {icon}
         <span>{label}</span>

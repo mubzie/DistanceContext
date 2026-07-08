@@ -1,5 +1,5 @@
-import { MapPinned, Route, MoveRight } from 'lucide-react';
-import { frequentLocations, frequentRoutes } from '../data/frequentRoutes';
+import { MapPinned, Route, MoveRight } from "lucide-react";
+import { frequentLocations, frequentRoutes } from "../data/frequentRoutes";
 
 export function DistanceInput({
   mode,
@@ -15,10 +15,10 @@ export function DistanceInput({
   customStart,
   setCustomStart,
   customEnd,
-  setCustomEnd
+  setCustomEnd,
 }) {
   return (
-    <section className="mx-auto w-full max-w-4xl rounded-[2rem] bg-white p-6 shadow-soft ring-1 ring-slate-200/80 sm:p-8">
+    <section className="mx-auto w-full max-w-4xl rounded-[.5rem] bg-white p-6 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)] sm:p-8">
       <div className="flex flex-col gap-6">
         <div className="space-y-2 text-center">
           <p className="text-sm font-medium uppercase tracking-[0.25em] text-slate-500">
@@ -34,11 +34,14 @@ export function DistanceInput({
         </div>
 
         <div className="flex items-center justify-center rounded-full bg-slate-100 p-1">
-          <TabButton active={mode === 'distance'} onClick={() => setMode('distance')}>
+          <TabButton
+            active={mode === "distance"}
+            onClick={() => setMode("distance")}
+          >
             <Route className="h-4 w-4" />
             By Distance
           </TabButton>
-          <TabButton active={mode === 'route'} onClick={() => setMode('route')}>
+          <TabButton active={mode === "route"} onClick={() => setMode("route")}>
             <MapPinned className="h-4 w-4" />
             By Route
           </TabButton>
@@ -46,7 +49,9 @@ export function DistanceInput({
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Travel mode</span>
+            <span className="text-sm font-medium text-slate-700">
+              Travel mode
+            </span>
             <select
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
               value={travelMode}
@@ -57,10 +62,12 @@ export function DistanceInput({
             </select>
           </label>
 
-          {mode === 'distance' ? (
+          {mode === "distance" ? (
             <div className="grid grid-cols-[1fr_120px] gap-3">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Distance</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Distance
+                </span>
                 <input
                   type="number"
                   min="0"
@@ -85,7 +92,9 @@ export function DistanceInput({
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Start</span>
+                <span className="text-sm font-medium text-slate-700">
+                  Start
+                </span>
                 <input
                   list="frequent-locations"
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
@@ -125,8 +134,8 @@ export function DistanceInput({
               }}
               className={`rounded-3xl border px-4 py-4 text-left transition ${
                 selectedRouteId === route.id
-                  ? 'border-slate-900 bg-slate-900 text-white'
-                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
               }`}
             >
               <div className="flex items-center gap-2">
@@ -135,7 +144,9 @@ export function DistanceInput({
                   {route.start} → {route.end}
                 </span>
               </div>
-              <p className={`mt-1 text-sm ${selectedRouteId === route.id ? 'text-slate-300' : 'text-slate-500'}`}>
+              <p
+                className={`mt-1 text-sm ${selectedRouteId === route.id ? "text-slate-300" : "text-slate-500"}`}
+              >
                 {route.notes}
               </p>
             </button>
@@ -152,7 +163,7 @@ function TabButton({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition ${
-        active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+        active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
       }`}
     >
       {children}

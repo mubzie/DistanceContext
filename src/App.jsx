@@ -14,8 +14,8 @@ export default function App() {
   return (
     <main className="h-screen overflow-hidden relative bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.18),_transparent_38%)]">
       <div className="mx-auto flex h-full w-full">
-        <div className="left-panel flex flex-1 gap-6 flex-col p-6 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[600px]">
+        <div className="left-panel flex flex-1 gap-6 flex-col px-6 py-14 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[600px] flex flex-col gap-6">
             <DistanceInput {...context} />
             <div className="space-y-6">
               <ContextSummary
