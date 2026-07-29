@@ -1,30 +1,20 @@
-import {
-  MapContainer,
-  Marker,
-  Polyline,
-  Popup,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
 import { useEffect } from "react";
-import "leaflet/dist/leaflet.css";
-
-const markerIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { Map, MapMarker, MarkerContent, MarkerPopup, MapRoute, MapControls, useMap } from "./ui/map";
 
 export function RouteMap({ route }) {
   if (!route) {
     return null;
   }
+
+  const routeCoords = [
+    [route.startCoords[1], route.startCoords[0]],
+    [route.endCoords[1], route.endCoords[0]],
+  ];
+
+  const center = [
+    (route.startCoords[1] + route.endCoords[1]) / 2,
+    (route.startCoords[0] + route.endCoords[0]) / 2,
+  ];
 
   return (
     <section className="flex flex-col gap-3 rounded-none bg-white p-4 shadow-soft ring-1 ring-slate-200/80 w-full h-full object-cover">
@@ -37,41 +27,39 @@ export function RouteMap({ route }) {
         </p>
       </div>
       <div className="overflow-hidden rounded-[1.5rem] h-full">
-        <MapContainer
-          center={route.startCoords}
-          zoom={13}
-          scrollWheelZoom={false}
-        >
+        <Map center={center} scrollZoom={false} className="h-full w-full">
           <FitRouteBounds route={route} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker position={route.startCoords} icon={markerIcon}>
-            <Popup>{route.start}</Popup>
-          </Marker>
-          <Marker position={route.endCoords} icon={markerIcon}>
-            <Popup>{route.end}</Popup>
-          </Marker>
-          <Polyline
-            positions={[route.startCoords, route.endCoords]}
-            pathOptions={{ color: "#0f172a", weight: 4 }}
-          />
-        </MapContainer>
+          <MapRoute coordinates={routeCoords} color="#0f172a" width={4} />
+          <MapMarker longitude={route.startCoords[1]} latitude={route.startCoords[0]}>
+            <MarkerContent>
+              <div className="h-4 w-4 rounded-full border-2 border-white bg-slate-900 shadow-lg" />
+            </MarkerContent>
+            <MarkerPopup>{route.start}</MarkerPopup>
+          </MapMarker>
+          <MapMarker longitude={route.endCoords[1]} latitude={route.endCoords[0]}>
+            <MarkerContent>
+              <div className="h-4 w-4 rounded-full border-2 border-white bg-slate-900 shadow-lg" />
+            </MarkerContent>
+            <MarkerPopup>{route.end}</MarkerPopup>
+          </MapMarker>
+          <MapControls showZoom showCompass={false} showLocate={false} showFullscreen={false} />
+        </Map>
       </div>
     </section>
   );
 }
 
 function FitRouteBounds({ route }) {
-  const map = useMap();
+  const { map, isLoaded } = useMap();
 
   useEffect(() => {
-    map.fitBounds([route.startCoords, route.endCoords], {
-      padding: [40, 40],
-      maxZoom: 14,
-    });
-  }, [map, route]);
+    if (!map || !isLoaded) return;
+
+    const sw = [route.startCoords[1], route.startCoords[0]];
+    const ne = [route.endCoords[1], route.endCoords[0]];
+
+    map.fitBounds([sw, ne], { padding: 40, maxZoom: 14 });
+  }, [map, isLoaded, route]);
 
   return null;
 }
