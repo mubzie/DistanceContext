@@ -4,6 +4,15 @@ import { haversineDistanceKm } from '../utils/distance';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 const RADIUS_METERS = 50000;
 const MAX_RESULTS = 50;
+const TOP_PLACES = 20;
+
+const PLACE_WEIGHT = {
+  city: 5,
+  town: 4,
+  suburb: 3,
+  village: 2,
+  neighbourhood: 1,
+};
 
 function cacheKey(lat, lng) {
   return `nearby_places_${lat.toFixed(1)}_${lng.toFixed(1)}`;
@@ -76,18 +85,24 @@ export function useNearbyPlaces(location) {
         const result = [];
         for (const el of data.elements) {
           const name = el.tags?.name;
+          const placeType = el.tags?.place;
           if (!name || seen.has(name)) continue;
           seen.add(name);
-          result.push({ name, lat: el.lat, lng: el.lon });
+          const distanceKm = haversineDistanceKm([el.lat, el.lng], [lat, lng]);
+          const weight = PLACE_WEIGHT[placeType] ?? 0;
+          result.push({
+            name,
+            lat: el.lat,
+            lng: el.lon,
+            placeType,
+            distanceKm,
+            score: weight * 100 - distanceKm,
+          });
         }
 
-        result.sort(
-          (a, b) =>
-            haversineDistanceKm([a.lat, a.lng], [lat, lng]) -
-            haversineDistanceKm([b.lat, b.lng], [lat, lng]),
-        );
+        result.sort((a, b) => b.score - a.score);
 
-        setPlaces(result);
+        setPlaces(result.slice(0, TOP_PLACES));
         writeCache(lat, lng, result);
         setLoading(false);
       })
