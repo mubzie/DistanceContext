@@ -39,6 +39,9 @@ export default function App() {
               userLocation={context.userLocation}
               mode={context.mode}
               routeDistanceKm={context.routeDistanceKm}
+              estimatedMinutes={context.estimatedMinutes}
+              travelMode={context.travelMode}
+              distanceUnit={context.distanceUnit}
             />
         </div>
       </div>

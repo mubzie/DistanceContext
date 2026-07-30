@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Map, MapMarker, MarkerContent, MarkerPopup, MapRoute, MapControls, useMap, MapGeoJSON } from "./ui/map";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card";
 import { Loader2 } from "lucide-react";
+import { MapOverlay } from "./MapOverlay";
 
 function circleGeoJSON(lat, lng, radiusKm, points = 64) {
   const coords = [];
@@ -34,7 +35,7 @@ function circleGeoJSON(lat, lng, radiusKm, points = 64) {
   };
 }
 
-export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocation, mode, routeDistanceKm }) {
+export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocation, mode, routeDistanceKm, estimatedMinutes, travelMode, distanceUnit }) {
   const [animProgress, setAnimProgress] = useState(1);
   const animRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -124,7 +125,7 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
         </div>
       </CardHeader>
       <CardContent className="h-full p-4">
-        <div className="overflow-hidden rounded-[1.5rem] h-full">
+        <div className="relative overflow-hidden rounded-[1.5rem] h-full">
           <Map center={center} zoom={route ? 10 : 9} className="h-full w-full">
             {route && <FitRouteBounds route={route} actualRouteCoords={actualRouteCoords} />}
             {route && (
@@ -194,6 +195,13 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
             )}
             <MapControls showZoom showCompass={false} showLocate={false} showFullscreen={false} />
           </Map>
+          <MapOverlay
+            route={route}
+            routeDistanceKm={routeDistanceKm}
+            estimatedMinutes={estimatedMinutes}
+            travelMode={travelMode}
+            distanceUnit={distanceUnit}
+          />
         </div>
       </CardContent>
     </Card>
