@@ -137,12 +137,21 @@ export function useDistanceContext() {
 
   const routeSuggestions = useMemo(() => {
     if (!placePairs.length) return [];
-    const sorted = [...placePairs].sort(
-      (a, b) =>
-        Math.abs(a.baseDistanceKm - routeDistanceKm) -
-        Math.abs(b.baseDistanceKm - routeDistanceKm),
-    );
-    return sorted.slice(0, 6);
+    const sortedByDist = [...placePairs].sort((a, b) => a.baseDistanceKm - b.baseDistanceKm);
+    const n = sortedByDist.length;
+    const bucketSize = Math.ceil(n / 3);
+    const buckets = [
+      sortedByDist.slice(0, bucketSize),
+      sortedByDist.slice(bucketSize, 2 * bucketSize),
+      sortedByDist.slice(2 * bucketSize),
+    ];
+    return buckets
+      .flatMap((bucket) =>
+        bucket
+          .map((p) => ({ ...p, delta: Math.abs(p.baseDistanceKm - routeDistanceKm) }))
+          .sort((a, b) => a.delta - b.delta)
+          .slice(0, 2),
+      );
   }, [placePairs, routeDistanceKm]);
 
   const baseDistanceKm = contextualRoute?.baseDistanceKm ?? 0;
