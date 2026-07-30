@@ -104,7 +104,7 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
 
   return (
     <Card className="rounded-none w-full h-full">
-      <CardHeader>
+      <CardHeader className="hidden md:block">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-sm font-medium uppercase tracking-[0.25em]">
@@ -124,7 +124,7 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
           )}
         </div>
       </CardHeader>
-      <CardContent className="h-full p-4">
+      <CardContent className="h-full p-2 md:p-4">
         <div className="relative overflow-hidden rounded-[1.5rem] h-full">
           <Map center={center} zoom={route ? 10 : 9} className="h-full w-full">
             {route && <FitRouteBounds route={route} actualRouteCoords={actualRouteCoords} />}

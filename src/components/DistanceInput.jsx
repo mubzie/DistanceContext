@@ -191,7 +191,7 @@ export function DistanceInput({
 
   return (
     <Card className="mx-auto w-full max-w-4xl">
-      <CardContent className="flex flex-col items-center gap-6 p-6 sm:p-8">
+      <CardContent className="flex flex-col items-center gap-4 md:gap-6 p-4 sm:p-6 md:p-8">
         <div className="space-y-2 text-center">
           <p className="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">
             DistanceContext
