@@ -32,7 +32,12 @@ export default function App() {
         </div>
 
         <div className="sticky top-0 h-screen w-[600px] shrink-0 overflow-hidden">
-          <RouteMap route={context.mapRoute} />
+          <RouteMap
+              route={context.mapRoute}
+              actualRouteCoords={context.actualRouteCoords}
+              isRouteLoading={context.isRouteLoading}
+              userLocation={context.userLocation}
+            />
         </div>
       </div>
     </main>

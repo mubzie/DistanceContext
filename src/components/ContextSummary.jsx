@@ -1,5 +1,7 @@
 import { Clock3, Gauge, MoveRight } from "lucide-react";
 import { formatNumber, formatTime } from "../utils/format";
+import { Card, CardContent } from "./ui/card";
+import { Badge } from "./ui/badge";
 
 export function ContextSummary({
   summary,
@@ -16,8 +18,8 @@ export function ContextSummary({
 
   return (
     <section className="space-y-4">
-      <div className="rounded-lg bg-slate-900 p-6 text-white sm:p-8">
-        <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
+      <div className="rounded-lg bg-foreground p-6 text-background sm:p-8">
+        <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground/70">
           Context
         </p>
         <p className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
@@ -32,55 +34,56 @@ export function ContextSummary({
         <MetricCard icon={<MoveRight className="h-4 w-4" />} label="Multiplier">
           {formatNumber(multiplier, 1)}x
         </MetricCard>
-        <MetricCard
-          icon={<Clock3 className="h-4 w-4" />}
-          label="Estimated time"
-        >
+        <MetricCard icon={<Clock3 className="h-4 w-4" />} label="Estimated time">
           {formatTime(estimatedMinutes)}
         </MetricCard>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)]">
-        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-          <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-            {travelMode === "walking" ? "Walking" : "Driving / Transit"}
-          </span>
-          <span>
-            Route shown: {route.start} to {route.end}
-          </span>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Detail label="Route distance">
-            {formatNumber(routeDistanceKm, 2)} km
-          </Detail>
-          <Detail label="Context speed">
-            {travelMode === "walking" ? "5 km/h" : "30 km/h"}
-          </Detail>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <Badge variant="secondary">
+              {travelMode === "walking" ? "Walking" : "Driving / Transit"}
+            </Badge>
+            <span>
+              Route shown: {route.start} to {route.end}
+            </span>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Detail label="Route distance">
+              {formatNumber(routeDistanceKm, 2)} km
+            </Detail>
+            <Detail label="Context speed">
+              {travelMode === "walking" ? "5 km/h" : "30 km/h"}
+            </Detail>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }
 
 function MetricCard({ icon, label, children }) {
   return (
-    <div className="rounded-lg bg-white p-5 shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_2px_4px_0_rgba(0,0,0,0.06)]">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="mt-2 text-lg font-semibold text-slate-900">
-        {children}
-      </div>
-    </div>
+    <Card size="sm" className="gap-2">
+      <CardContent className="flex flex-col gap-2 p-5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {icon}
+          <span>{label}</span>
+        </div>
+        <div className="text-lg font-semibold text-foreground">
+          {children}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function Detail({ label, children }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-4">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-medium text-slate-900">{children}</p>
+    <div className="rounded-2xl bg-muted p-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 text-base font-medium text-foreground">{children}</p>
     </div>
   );
 }
