@@ -9,6 +9,7 @@ import { Card, CardContent } from "./ui/card";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
 
 const MIN_PLACES = 2;
 
@@ -139,9 +140,22 @@ export function DistanceInput({
   const renderPlacesStatus = () => {
     if (placesLoading) {
       return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Finding places near you&hellip;
+        <div className="flex w-full flex-col gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Finding places near you&hellip;
+          </div>
+          <div className="grid w-full gap-3 md:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <Skeleton className="mt-2 h-3 w-16" />
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
