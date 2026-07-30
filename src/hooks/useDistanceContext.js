@@ -11,6 +11,16 @@ const speedByMode = {
 };
 
 const DEFAULT_LOCATION = { lat: 6.5244, lng: 3.3792 };
+const PREFS_KEY = 'dc_prefs';
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
 
 function normalizePlace(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -30,12 +40,18 @@ export function useDistanceContext() {
   const [locationSearchLoading, setLocationSearchLoading] = useState(false);
   const [locationSearchError, setLocationSearchError] = useState(null);
 
-  const [mode, setMode] = useState('distance');
+  const saved = loadPrefs();
+
+  const [mode, setMode] = useState(saved.mode ?? 'distance');
   const [distanceValue, setDistanceValue] = useState(2);
-  const [distanceUnit, setDistanceUnit] = useState('km');
-  const [travelMode, setTravelMode] = useState('walking');
+  const [distanceUnit, setDistanceUnit] = useState(saved.distanceUnit ?? 'km');
+  const [travelMode, setTravelMode] = useState(saved.travelMode ?? 'walking');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ mode, travelMode, distanceUnit }));
+  }, [mode, travelMode, distanceUnit]);
 
   useEffect(() => {
     if (!activeLocation) return;
