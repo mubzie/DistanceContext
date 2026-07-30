@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGeolocation } from './useGeolocation';
 import { useNearbyPlaces } from './useNearbyPlaces';
 import { haversineDistanceKm, toKilometers } from '../utils/distance';
 import { formatNumber, formatTime } from '../utils/format';
+import { reverseGeocode, forwardGeocode } from '../utils/geocode';
 
 const speedByMode = {
   walking: 5,
@@ -16,12 +17,18 @@ function normalizePlace(value) {
 }
 
 export function useDistanceContext() {
-  const { location: geoLocation, loading: geoLoading, error: geoError } = useGeolocation();
+  const { location: geoLocation, loading: geoLoading, error: geoError, setManualLocation } =
+    useGeolocation();
 
   const activeLocation = geoLocation || DEFAULT_LOCATION;
 
-  const { places: nearbyPlaces, loading: placesLoading, error: placesError } =
+  const { places: nearbyPlaces, loading: placesLoading, error: placesError, retry: retryPlaces } =
     useNearbyPlaces(activeLocation);
+
+  const [locationName, setLocationName] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSearchLoading, setLocationSearchLoading] = useState(false);
+  const [locationSearchError, setLocationSearchError] = useState(null);
 
   const [mode, setMode] = useState('distance');
   const [distanceValue, setDistanceValue] = useState(2);
@@ -29,6 +36,39 @@ export function useDistanceContext() {
   const [travelMode, setTravelMode] = useState('walking');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+
+  useEffect(() => {
+    if (!activeLocation) return;
+    reverseGeocode(activeLocation.lat, activeLocation.lng)
+      .then((result) => setLocationName(result.name))
+      .catch(() =>
+        setLocationName(`${activeLocation.lat.toFixed(2)}°N, ${activeLocation.lng.toFixed(2)}°E`),
+      );
+  }, [activeLocation?.lat, activeLocation?.lng]);
+
+  useEffect(() => {
+    setCustomStart('');
+    setCustomEnd('');
+  }, [activeLocation?.lat, activeLocation?.lng]);
+
+  const handleLocationSearch = useCallback(
+    async (query) => {
+      if (!query.trim()) return;
+      setLocationSearchLoading(true);
+      setLocationSearchError(null);
+      try {
+        const result = await forwardGeocode(query);
+        setManualLocation(result.lat, result.lng);
+        setLocationName(result.name);
+        setLocationQuery('');
+      } catch (err) {
+        setLocationSearchError(err.message);
+      } finally {
+        setLocationSearchLoading(false);
+      }
+    },
+    [setManualLocation],
+  );
 
   const placePairs = useMemo(() => {
     if (!nearbyPlaces || nearbyPlaces.length < 2) return [];
@@ -183,6 +223,13 @@ export function useDistanceContext() {
     nearbyPlaces,
     placesLoading,
     placesError,
+    retryPlaces,
+
+    locationName,
+    locationQuery, setLocationQuery,
+    locationSearchLoading,
+    locationSearchError,
+    handleLocationSearch,
 
     routeSuggestions,
     routeDistanceKm,

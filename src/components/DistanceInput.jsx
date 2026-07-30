@@ -1,10 +1,16 @@
 "use client";
 
-import { MapPinned, Route, MoveRight, Loader2 } from "lucide-react";
+import { useState } from "react";
+import {
+  MapPinned, Route, MoveRight, Loader2, MapPin,
+  Search, X, RefreshCw,
+} from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { Input } from "./ui/input";
+
+const MIN_PLACES = 2;
 
 export function DistanceInput({
   mode,
@@ -22,11 +28,152 @@ export function DistanceInput({
 
   nearbyPlaces,
   placesLoading,
+  placesError,
+  retryPlaces,
   routeSuggestions,
+
+  locationName,
+  locationLoading,
+  locationError,
+  locationQuery,
+  setLocationQuery,
+  locationSearchLoading,
+  locationSearchError,
+  handleLocationSearch,
 }) {
+  const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const [locationInput, setLocationInput] = useState("");
+
   const placeNames = nearbyPlaces?.map((p) => p.name) ?? [];
 
   const isActive = (route) => customStart === route.start && customEnd === route.end;
+
+  const handleSearchSubmit = () => {
+    handleLocationSearch(locationInput);
+    setShowLocationSearch(false);
+    setLocationInput("");
+  };
+
+  const renderLocationBar = () => {
+    if (locationLoading) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Detecting your location&hellip;
+        </div>
+      );
+    }
+
+    if (showLocationSearch) {
+      return (
+        <div className="flex w-full items-center gap-2">
+          <Input
+            value={locationInput}
+            onChange={(e) => setLocationInput(e.target.value)}
+            placeholder="Search for a city or area"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchSubmit();
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSearchSubmit}
+            disabled={locationSearchLoading || !locationInput.trim()}
+            className="shrink-0 rounded-lg border border-border p-2 hover:bg-muted transition disabled:opacity-40"
+          >
+            {locationSearchLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowLocationSearch(false);
+              setLocationInput("");
+            }}
+            className="shrink-0 rounded-lg border border-border p-2 hover:bg-muted transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      );
+    }
+
+    if (locationError) {
+      return (
+        <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span>Location unavailable</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowLocationSearch(true)}
+            className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+          >
+            Set manually
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 truncate">
+          <MapPin className="h-4 w-4 shrink-0" />
+          <span className="truncate">{locationName}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowLocationSearch(true)}
+          className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+        >
+          Change
+        </button>
+      </div>
+    );
+  };
+
+  const renderPlacesStatus = () => {
+    if (placesLoading) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Finding places near you&hellip;
+        </div>
+      );
+    }
+
+    if (placesError) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-destructive">
+          <span>Failed to load nearby places.</span>
+          <button
+            type="button"
+            onClick={retryPlaces}
+            className="flex items-center gap-1 underline underline-offset-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    if (!nearbyPlaces || nearbyPlaces.length < MIN_PLACES) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          {nearbyPlaces?.length === 0
+            ? "No places found near this location. Try a different area."
+            : "Only one place found. Need at least two for comparisons."}
+        </p>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Card className="mx-auto w-full max-w-4xl">
@@ -43,6 +190,8 @@ export function DistanceInput({
             likely take.
           </p>
         </div>
+
+        {renderLocationBar()}
 
         <div className="flex items-center w-max justify-center rounded-full bg-muted p-1">
           <Tabs value={mode} onValueChange={setMode}>
@@ -139,12 +288,17 @@ export function DistanceInput({
           )}
         </div>
 
-        {placesLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Finding places near you…
-          </div>
-        ) : (
+        {renderPlacesStatus()}
+
+        {placesLoading || placesError || !nearbyPlaces || nearbyPlaces.length < MIN_PLACES
+          ? null
+          : routeSuggestions.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Enter a distance to see matching routes.
+              </p>
+            )}
+
+        {!placesLoading && !placesError && nearbyPlaces && nearbyPlaces.length >= MIN_PLACES && (
           <div className="grid w-full gap-3 md:grid-cols-2">
             {routeSuggestions.map((route) => {
               const active = isActive(route);
@@ -166,7 +320,7 @@ export function DistanceInput({
                   <div className="flex items-center gap-2">
                     <MoveRight className="h-4 w-4" />
                     <span className="font-medium">
-                      {route.start} → {route.end}
+                      {route.start} &rarr; {route.end}
                     </span>
                   </div>
                   <p

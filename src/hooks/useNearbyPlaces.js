@@ -36,6 +36,7 @@ export function useNearbyPlaces(location) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const abortRef = useRef(null);
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export function useNearbyPlaces(location) {
           setLoading(false);
         }
       });
-  }, [location?.lat, location?.lng]);
+  }, [location?.lat, location?.lng, retryCount]);
 
-  return { places, loading, error };
+  return { places, loading, error, retry: () => setRetryCount((c) => c + 1) };
 }
