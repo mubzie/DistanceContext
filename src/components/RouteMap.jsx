@@ -63,10 +63,24 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
     };
   }, [actualRouteCoords]);
 
+  const [bouncing, setBouncing] = useState(false);
+
+  useEffect(() => {
+    if (route) {
+      setBouncing(true);
+      const timer = setTimeout(() => setBouncing(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [route?.start, route?.end]);
+
   const animatedCoords =
     actualRouteCoords && actualRouteCoords.length > 1
       ? actualRouteCoords.slice(0, Math.max(1, Math.floor(animProgress * actualRouteCoords.length)))
       : [];
+
+  const markerClass = `h-4 w-4 rounded-full border-2 border-white shadow-lg ${
+    bouncing ? "animate-bounce" : ""
+  }`;
 
   const center = route
     ? [
@@ -123,24 +137,33 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
               />
             )}
             {actualRouteCoords && actualRouteCoords.length > 1 && (
-              <MapRoute
-                coordinates={animatedCoords}
-                color="#3b82f6"
-                width={4}
-                opacity={0.9}
-              />
+              <>
+                <MapRoute
+                  coordinates={animatedCoords}
+                  color="#3b82f6"
+                  width={12}
+                  opacity={0.15}
+                  interactive={false}
+                />
+                <MapRoute
+                  coordinates={animatedCoords}
+                  color="#3b82f6"
+                  width={4}
+                  opacity={0.9}
+                />
+              </>
             )}
             {route && (
               <>
                 <MapMarker longitude={route.startCoords[1]} latitude={route.startCoords[0]}>
                   <MarkerContent>
-                    <div className="h-4 w-4 rounded-full border-2 border-white bg-foreground shadow-lg" />
+                    <div className={`${markerClass} bg-foreground`} />
                   </MarkerContent>
                   <MarkerPopup>{route.start}</MarkerPopup>
                 </MapMarker>
                 <MapMarker longitude={route.endCoords[1]} latitude={route.endCoords[0]}>
                   <MarkerContent>
-                    <div className="h-4 w-4 rounded-full border-2 border-white bg-foreground shadow-lg" />
+                    <div className={`${markerClass} bg-foreground`} />
                   </MarkerContent>
                   <MarkerPopup>{route.end}</MarkerPopup>
                 </MapMarker>
@@ -199,12 +222,12 @@ function FitRouteBounds({ route, actualRouteCoords }) {
       const latPad = Math.max((maxLat - minLat) * 0.1, 0.005);
       map.fitBounds(
         [[minLng - lngPad, minLat - latPad], [maxLng + lngPad, maxLat + latPad]],
-        { padding: 40, maxZoom: 14, animate: false },
+        { padding: 40, maxZoom: 14, animate: true, duration: 1000 },
       );
     } else {
       const sw = [route.startCoords[1], route.startCoords[0]];
       const ne = [route.endCoords[1], route.endCoords[0]];
-      map.fitBounds([sw, ne], { padding: 40, maxZoom: 14, animate: false });
+      map.fitBounds([sw, ne], { padding: 40, maxZoom: 14, animate: true, duration: 1000 });
     }
   }, [map, isLoaded, fitKey]);
 
