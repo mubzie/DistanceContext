@@ -37,6 +37,8 @@ export default function App() {
               actualRouteCoords={context.actualRouteCoords}
               isRouteLoading={context.isRouteLoading}
               userLocation={context.userLocation}
+              mode={context.mode}
+              routeDistanceKm={context.routeDistanceKm}
             />
         </div>
       </div>

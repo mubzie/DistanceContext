@@ -1,9 +1,73 @@
-import { useEffect } from "react";
-import { Map, MapMarker, MarkerContent, MarkerPopup, MapRoute, MapControls, useMap } from "./ui/map";
+import { useState, useEffect, useRef } from "react";
+import { Map, MapMarker, MarkerContent, MarkerPopup, MapRoute, MapControls, useMap, MapGeoJSON } from "./ui/map";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card";
 import { Loader2 } from "lucide-react";
 
-export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocation }) {
+function circleGeoJSON(lat, lng, radiusKm, points = 64) {
+  const coords = [];
+  const R = 6371;
+  for (let i = 0; i <= points; i++) {
+    const bearing = (i / points) * 2 * Math.PI;
+    const lat1 = (lat * Math.PI) / 180;
+    const lng1 = (lng * Math.PI) / 180;
+    const d = radiusKm / R;
+    const lat2 = Math.asin(
+      Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(bearing),
+    );
+    const lng2 =
+      lng1 +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(d) * Math.cos(lat1),
+        Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
+      );
+    coords.push([(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI]);
+  }
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "Polygon", coordinates: [coords] },
+      },
+    ],
+  };
+}
+
+export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocation, mode, routeDistanceKm }) {
+  const [animProgress, setAnimProgress] = useState(1);
+  const animRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    if (!actualRouteCoords || actualRouteCoords.length < 2) {
+      setAnimProgress(1);
+      return;
+    }
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    setAnimProgress(0);
+    startTimeRef.current = null;
+
+    const animate = (timestamp) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const t = Math.min(elapsed / 800, 1);
+      setAnimProgress(t);
+      if (t < 1) animRef.current = requestAnimationFrame(animate);
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [actualRouteCoords]);
+
+  const animatedCoords =
+    actualRouteCoords && actualRouteCoords.length > 1
+      ? actualRouteCoords.slice(0, Math.max(1, Math.floor(animProgress * actualRouteCoords.length)))
+      : [];
+
   const center = route
     ? [
         (route.startCoords[1] + route.endCoords[1]) / 2,
@@ -19,6 +83,9 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
         [route.endCoords[1], route.endCoords[0]],
       ]
     : [];
+
+  const showRing = mode === "distance" && routeDistanceKm > 0 && userLocation;
+  const ringData = showRing ? circleGeoJSON(userLocation.lat, userLocation.lng, routeDistanceKm) : null;
 
   return (
     <Card className="rounded-none w-full h-full">
@@ -55,9 +122,9 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
                 dashArray={[4, 6]}
               />
             )}
-            {actualRouteCoords && (
+            {actualRouteCoords && actualRouteCoords.length > 1 && (
               <MapRoute
-                coordinates={actualRouteCoords}
+                coordinates={animatedCoords}
                 color="#3b82f6"
                 width={4}
                 opacity={0.9}
@@ -82,10 +149,25 @@ export function RouteMap({ route, actualRouteCoords, isRouteLoading, userLocatio
             {userLocation && (
               <MapMarker longitude={userLocation.lng} latitude={userLocation.lat}>
                 <MarkerContent>
-                  <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
+                  <div className="relative">
+                    <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft" />
+                    <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
+                  </div>
                 </MarkerContent>
                 <MarkerPopup>You are here</MarkerPopup>
               </MapMarker>
+            )}
+            {ringData && (
+              <MapGeoJSON
+                data={ringData}
+                fillPaint={{ "fill-color": "#3b82f6", "fill-opacity": 0.08 }}
+                linePaint={{
+                  "line-color": "#3b82f6",
+                  "line-width": 2,
+                  "line-opacity": 0.4,
+                  "line-dasharray": [4, 8],
+                }}
+              />
             )}
             <MapControls showZoom showCompass={false} showLocate={false} showFullscreen={false} />
           </Map>
