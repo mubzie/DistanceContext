@@ -1,0 +1,10 @@
+{
+  "prettier": {
+    "allowed": true
+  },
+  "indent_guides": {
+    "enabled": true
+  },
+  "soft_wrap": "editor_width",
+  "show_wrap_guides": true
+}
