@@ -7,6 +7,42 @@ const LOCAL_RADIUS_METERS = 25000;
 const QUERY_LIMIT = 250;
 const TOP_PLACES = 20;
 
+// Public Overpass instances. The main one load-balances across backends that
+// are inconsistent about CORS headers (some GET responses lack
+// Access-Control-Allow-Origin entirely), so the documented POST interface is
+// used and mirrors are tried in order until one responds.
+const OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.osm.ch/api/interpreter",
+];
+
+async function fetchOverpass(query, signal) {
+    let lastError = null;
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `data=${encodeURIComponent(query)}`,
+                signal,
+            });
+            if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
+            const data = await res.json();
+            if (!data || !Array.isArray(data.elements)) {
+                throw new Error("Overpass returned no data");
+            }
+            return data;
+        } catch (err) {
+            if (err.name === "AbortError") throw err;
+            lastError = err;
+        }
+    }
+    throw lastError ?? new Error("All Overpass mirrors failed");
+}
+
 const PLACE_WEIGHT = {
     city: 5,
     town: 4,
@@ -78,13 +114,7 @@ export function useNearbyPlaces(location) {
         // distance), which silently drops well-known places like Ikeja or Agege.
         const query = `[out:json][timeout:25];(node["place"~"^(city|town)$"](around:${RADIUS_METERS},${lat},${lng});node["place"~"^(suburb|village|neighbourhood)$"](around:${LOCAL_RADIUS_METERS},${lat},${lng}););out body ${QUERY_LIMIT};`;
 
-        fetch(
-            `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
-            {
-                signal: controller.signal,
-            },
-        )
-            .then((r) => r.json())
+        fetchOverpass(query, controller.signal)
             .then((data) => {
                 if (!data?.elements) {
                     setPlaces([]);
