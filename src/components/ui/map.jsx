@@ -1,12 +1,14 @@
 "use client";
 import * as MapLibreGL from "maplibre-gl";
-import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // MapLibre v6 resolves its web worker from `new URL('./maplibre-gl-worker.mjs',
 // import.meta.url)` — a runtime-computed URL that Vite cannot statically
-// analyze, so the worker file never lands in dist/ and the map silently fails
-// to initialize in production. Point it at a Vite-emitted copy instead.
+// analyze, so the worker never lands in dist/ and the map silently fails to
+// initialize in production. Point it at a Vite-built copy instead. The
+// `?worker&url` import also bundles the worker's own import of
+// maplibre-gl-shared.mjs into a single self-contained file.
 MapLibreGL.setWorkerUrl(maplibreWorkerUrl);
 import {
     createContext,
