@@ -58,6 +58,7 @@ No API keys are required to run locally — Overpass, Nominatim, and OSRM are us
 - Nearby places search via Overpass with client-side ranking, dedup, and 24h cache
 - Full geocoding flow (reverse + forward) with retry and edge-case handling
 - Route suggestions bucketed across 3 distance ranges, with closest matches highlighted
+- Free-text start/end places (any city or area) resolved via Nominatim when not in the nearby list
 - Rich map interactions: pulsing location dot, distance radius ring, animated route drawing with glow trail, dashed straight-line comparison, marker bounce, fly-to/fit-bounds
 - Skeleton loaders and a map overlay card (route name, distance, time)
 - Mode, travel mode, and distance unit persisted to `localStorage`
