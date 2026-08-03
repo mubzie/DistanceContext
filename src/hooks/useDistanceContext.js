@@ -23,6 +23,11 @@ const PREFS_KEY = "dc_prefs";
 // are blocked with a clear message instead of drawn.
 const MAX_ROUTE_KM = 100;
 
+// Pairs closer than this are meaningless as context (duplicate OSM nodes,
+// same place mapped twice) — they'd render as "0.0 km" and win the closest
+// match for tiny inputs, so they're kept out entirely.
+const MIN_PAIR_KM = 0.5;
+
 function loadPrefs() {
     try {
         const raw = localStorage.getItem(PREFS_KEY);
@@ -119,15 +124,17 @@ export function useDistanceContext() {
             for (let j = i + 1; j < nearbyPlaces.length; j++) {
                 const a = nearbyPlaces[i];
                 const b = nearbyPlaces[j];
+                const baseDistanceKm = haversineDistanceKm(
+                    [a.lat, a.lng],
+                    [b.lat, b.lng],
+                );
+                if (baseDistanceKm < MIN_PAIR_KM) continue;
                 pairs.push({
                     start: a.name,
                     end: b.name,
                     startCoords: [a.lat, a.lng],
                     endCoords: [b.lat, b.lng],
-                    baseDistanceKm: haversineDistanceKm(
-                        [a.lat, a.lng],
-                        [b.lat, b.lng],
-                    ),
+                    baseDistanceKm,
                 });
             }
         }

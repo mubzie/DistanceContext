@@ -9,3 +9,5 @@ pnpm-debug.log*
 .vite/
 .idea/
 .vscode/
+.vercel
+.env*.local

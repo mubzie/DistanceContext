@@ -52,7 +52,7 @@ const PLACE_WEIGHT = {
 };
 
 function cacheKey(lat, lng) {
-    return `nearby_places_v2_${lat.toFixed(1)}_${lng.toFixed(1)}`;
+    return `nearby_places_v3_${lat.toFixed(1)}_${lng.toFixed(1)}`;
 }
 
 function loadCache(lat, lng) {
@@ -123,7 +123,11 @@ export function useNearbyPlaces(location) {
                 }
 
                 const seen = new Set();
-                const result = [];
+                // OSM often has several differently-named place nodes at the
+                // same spot (e.g. "Igbe" / "Igbe Ewoliwo", "Agani" / "Aqani"),
+                // so dedup by coordinates as well as by name — rounded to
+                // ~110 m — keeping the highest-scoring name of each cluster.
+                const byCoord = new Map();
                 for (const el of data.elements) {
                     const name = el.tags?.name;
                     const placeType = el.tags?.place;
@@ -134,15 +138,21 @@ export function useNearbyPlaces(location) {
                         [lat, lng],
                     );
                     const weight = PLACE_WEIGHT[placeType] ?? 0;
-                    result.push({
+                    const score = weight * 100 - distanceKm;
+                    const coordKey = `${el.lat.toFixed(3)},${el.lon.toFixed(3)}`;
+                    const existing = byCoord.get(coordKey);
+                    if (existing && existing.score >= score) continue;
+                    byCoord.set(coordKey, {
                         name,
                         lat: el.lat,
                         lng: el.lon,
                         placeType,
                         distanceKm,
-                        score: weight * 100 - distanceKm,
+                        score,
                     });
                 }
+
+                const result = [...byCoord.values()];
 
                 result.sort((a, b) => b.score - a.score);
 
