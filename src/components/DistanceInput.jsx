@@ -305,13 +305,18 @@ export function DistanceInput({
                                     Distance
                                 </span>
                                 <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.1"
+                                    type="text"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*[.]?[0-9]*"
+                                    placeholder="0"
                                     value={distanceValue}
-                                    onChange={(event) =>
-                                        setDistanceValue(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        const raw = event.target.value;
+                                        const cleaned = raw
+                                            .replace(/[^0-9.]/g, "")
+                                            .replace(/(\..*)\./g, "$1");
+                                        setDistanceValue(cleaned);
+                                    }}
                                 />
                             </div>
                             <div className="space-y-2">

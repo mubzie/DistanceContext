@@ -57,7 +57,7 @@ export function useDistanceContext() {
     const saved = loadPrefs();
 
     const [mode, setMode] = useState(saved.mode ?? "distance");
-    const [distanceValue, setDistanceValue] = useState(2);
+    const [distanceValue, setDistanceValue] = useState("2");
     const [distanceUnit, setDistanceUnit] = useState(
         saved.distanceUnit ?? "km",
     );
