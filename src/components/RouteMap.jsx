@@ -12,8 +12,6 @@ import {
 import {
     Card,
     CardHeader,
-    CardTitle,
-    CardDescription,
     CardContent,
 } from "./ui/card";
 import { Loader2 } from "lucide-react";
@@ -164,16 +162,6 @@ export function RouteMap({
         <Card className="rounded-none w-full h-full">
             <CardHeader className="hidden md:block">
                 <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-sm font-medium uppercase tracking-[0.25em]">
-                            Map
-                        </CardTitle>
-                        <CardDescription className="mt-1 text-sm">
-                            {route
-                                ? "A single leg is shown to keep the map calm and readable."
-                                : "Set your location, then enter a distance or pick a route."}
-                        </CardDescription>
-                    </div>
                     {isRouteLoading && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Loader2 className="size-3 animate-spin" />
@@ -182,8 +170,8 @@ export function RouteMap({
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="h-full p-2 md:p-4">
-                <div className="relative overflow-hidden rounded-[1.5rem] h-full">
+            <CardContent className="h-full p-2">
+                <div className="relative overflow-hidden rounded-[.5rem] h-full">
                     <Map
                         center={center}
                         zoom={mapZoom}
