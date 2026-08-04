@@ -66,6 +66,8 @@ export function DistanceInput({
     placesError,
     retryPlaces,
     routeSuggestions,
+    hasStartedContext,
+    setHasStartedContext,
 
     locationName,
     locationLoading,
@@ -322,6 +324,12 @@ export function DistanceInput({
                                             .replace(/[^0-9.]/g, "")
                                             .replace(/(\..*)\./g, "$1");
                                         setDistanceValue(cleaned);
+                                        if (
+                                            cleaned &&
+                                            Number(cleaned) > 0
+                                        ) {
+                                            setHasStartedContext(true);
+                                        }
                                     }}
                                 />
                             </div>
@@ -428,11 +436,13 @@ export function DistanceInput({
                 {renderPlacesStatus()}
 
                 <div className="w-full">
-                    {mapRoute ? (
-                        <ContextSentence
-                            summary={summary}
-                            route={mapRoute}
-                        />
+                    {hasStartedContext ? (
+                        mapRoute && (
+                            <ContextSentence
+                                summary={summary}
+                                route={mapRoute}
+                            />
+                        )
                     ) : (
                         <RouteSuggestions
                             routeSuggestions={routeSuggestions}
@@ -445,6 +455,7 @@ export function DistanceInput({
                             setMode={setMode}
                             setCustomStart={setCustomStart}
                             setCustomEnd={setCustomEnd}
+                            onSelect={() => setHasStartedContext(true)}
                         />
                     )}
                 </div>

@@ -70,6 +70,11 @@ export function useDistanceContext() {
     const [customStart, setCustomStart] = useState("");
     const [customEnd, setCustomEnd] = useState("");
 
+    // Session-only: suggestions are a first-run affordance. Once the user
+    // enters a distance or picks a suggestion, they never come back until a
+    // full reload. Never persisted.
+    const [hasStartedContext, setHasStartedContext] = useState(false);
+
     useEffect(() => {
         localStorage.setItem(
             PREFS_KEY,
@@ -393,5 +398,7 @@ export function useDistanceContext() {
         actualRouteCoords,
         actualRouteKm,
         isRouteLoading,
+        hasStartedContext,
+        setHasStartedContext,
     };
 }

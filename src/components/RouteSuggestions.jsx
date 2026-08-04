@@ -14,6 +14,7 @@ export function RouteSuggestions({
     setMode,
     setCustomStart,
     setCustomEnd,
+    onSelect,
 }) {
     const isActive = (route) =>
         customStart === route.start && customEnd === route.end;
@@ -43,6 +44,7 @@ export function RouteSuggestions({
                                     key={`${route.start}-${route.end}`}
                                     type="button"
                                     onClick={() => {
+                                        onSelect?.();
                                         setMode("route");
                                         setCustomStart(route.start);
                                         setCustomEnd(route.end);
