@@ -193,13 +193,13 @@ export function RouteMap({
                             location={ringLocation}
                             route={route}
                         />
-                        {mode === "route" && route && (
+                        {route && (
                             <FitRouteBounds
                                 route={route}
                                 actualRouteCoords={actualRouteCoords}
                             />
                         )}
-                        {mode === "distance" && (
+                        {mode === "distance" && !route && (
                             <FitDistanceRing
                                 location={ringLocation}
                                 radiusKm={routeDistanceKm}
@@ -367,9 +367,10 @@ function FitRouteBounds({ route, actualRouteCoords }) {
     return null;
 }
 
-// Distance mode owns the viewport: the matched route pair can stay the same
-// while the typed number changes, so the map refits to the radius ring around
-// the active location instead of the route geometry. Debounced so fast typing
+// Fallback viewport control while a distance is entered but no route pair has
+// matched yet (nearby places still loading or unavailable): fit the radius
+// ring around the active location so the map still responds to input. Once a
+// route exists, FitRouteBounds owns the viewport. Debounced so fast typing
 // ("25" as "2" then "5") doesn't fire a fit per keystroke.
 function FitDistanceRing({ location, radiusKm }) {
     const { map, isLoaded } = useMap();
