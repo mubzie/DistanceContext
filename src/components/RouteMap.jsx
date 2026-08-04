@@ -155,16 +155,6 @@ export function RouteMap({
         <Card className="rounded-none w-full h-full">
             <CardHeader className="hidden md:block">
                 <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-sm font-medium uppercase tracking-[0.25em]">
-                            Map
-                        </CardTitle>
-                        <CardDescription className="mt-1 text-sm">
-                            {route
-                                ? "A single leg is shown to keep the map calm and readable."
-                                : "Select a route or enter a distance to see it on the map."}
-                        </CardDescription>
-                    </div>
                     {isRouteLoading && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Loader2 className="size-3 animate-spin" />
@@ -173,8 +163,8 @@ export function RouteMap({
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="h-full p-2 md:p-4">
-                <div className="relative overflow-hidden rounded-[1.5rem] h-full">
+            <CardContent className="h-full p-2">
+                <div className="relative overflow-hidden rounded-[.5rem] h-full">
                     <Map
                         center={center}
                         zoom={route ? 10 : 9}
@@ -249,18 +239,18 @@ export function RouteMap({
                             </>
                         )}
                         {userLocation && (
-                                <MapMarker
-                                    longitude={userLocation.lng}
-                                    latitude={userLocation.lat}
-                                >
-                                    <MarkerContent aria-label="You are here">
-                                        <div className="relative">
-                                            <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft motion-reduce:animate-none" />
-                                            <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
-                                        </div>
-                                    </MarkerContent>
-                                    <MarkerPopup>You are here</MarkerPopup>
-                                </MapMarker>
+                            <MapMarker
+                                longitude={userLocation.lng}
+                                latitude={userLocation.lat}
+                            >
+                                <MarkerContent aria-label="You are here">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft motion-reduce:animate-none" />
+                                        <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
+                                    </div>
+                                </MarkerContent>
+                                <MarkerPopup>You are here</MarkerPopup>
+                            </MapMarker>
                         )}
                         {ringData && (
                             <MapGeoJSON
@@ -373,8 +363,7 @@ function FitDistanceRing({ location, radiusKm }) {
             const lat = location.lat;
             const lng = location.lng;
             const dLat = radiusKm / 111.32;
-            const dLng =
-                radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+            const dLng = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
             map.fitBounds(
                 [
                     [lng - dLng, lat - dLat],
