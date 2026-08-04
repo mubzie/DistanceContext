@@ -17,7 +17,7 @@ const speedByMode = {
     driving: 30,
 };
 
-const DEFAULT_LOCATION = { lat: 6.5244, lng: 3.3792 };
+const LAGOS_CENTER = { lat: 6.5244, lng: 3.3792 };
 
 // Within this distance of central Lagos the curated place index is a valid
 // stand-in for live nearby data. Farther away it would present Lagos routes as
@@ -50,10 +50,17 @@ export function useDistanceContext() {
         location: geoLocation,
         loading: geoLoading,
         error: geoError,
+        source: locationSource,
+        accuracyMeters,
+        requestLocation,
         setManualLocation,
     } = useGeolocation();
 
-    const activeLocation = geoLocation || DEFAULT_LOCATION;
+    // No implicit default location: context only exists once a confirmed GPS
+    // fix or a manual location exists. The map keeps its own display-only
+    // fallback center, but nearby places and context never assume Lagos.
+    const hasLocation = Boolean(geoLocation);
+    const activeLocation = geoLocation ?? null;
 
     const {
         places: remotePlaces,
@@ -70,20 +77,24 @@ export function useDistanceContext() {
         return (
             haversineDistanceKm(
                 [activeLocation.lat, activeLocation.lng],
-                [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+                [LAGOS_CENTER.lat, LAGOS_CENTER.lng],
             ) <= LAGOS_FALLBACK_RADIUS_KM
         );
     }, [activeLocation]);
 
     const nearbyPlaces = useMemo(() => {
-        if (!useCuratedFallback) return remotePlaces ?? [];
+        if (!activeLocation || !useCuratedFallback) return remotePlaces ?? [];
         return mergePlaceLists(remotePlaces ?? [], LAGOS_PLACES);
-    }, [remotePlaces, useCuratedFallback]);
+    }, [activeLocation, remotePlaces, useCuratedFallback]);
 
     // When the curated index is standing in, the API failure is downgraded to
-    // a notice (context still works) instead of a blocking error.
-    const placesFallback = useCuratedFallback && Boolean(remotePlacesError);
-    const placesError = placesFallback ? null : remotePlacesError;
+    // a notice (context still works) instead of a blocking error. Without a
+    // confirmed location there is no places error at all — the UI shows its
+    // own location-required state.
+    const placesFallback =
+        hasLocation && useCuratedFallback && Boolean(remotePlacesError);
+    const placesError =
+        hasLocation && !placesFallback ? remotePlacesError : null;
 
     const [locationName, setLocationName] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
@@ -114,7 +125,10 @@ export function useDistanceContext() {
     }, [travelMode, distanceUnit]);
 
     useEffect(() => {
-        if (!activeLocation) return;
+        if (!activeLocation) {
+            setLocationName("");
+            return;
+        }
         reverseGeocode(activeLocation.lat, activeLocation.lng)
             .then((result) => setLocationName(result.name))
             .catch(() =>
@@ -131,21 +145,25 @@ export function useDistanceContext() {
 
     const handleLocationSearch = useCallback(
         async (query) => {
-            if (!query.trim()) return;
+            if (!query.trim()) return false;
             setLocationSearchLoading(true);
             setLocationSearchError(null);
             try {
                 const result = await forwardGeocode(query, {
-                    viewbox: locationViewbox(
-                        activeLocation.lat,
-                        activeLocation.lng,
-                    ),
+                    viewbox: activeLocation
+                        ? locationViewbox(activeLocation.lat, activeLocation.lng)
+                        : undefined,
                 });
                 setManualLocation(result.lat, result.lng);
                 setLocationName(result.name);
                 setLocationQuery("");
+                return true;
             } catch (err) {
-                setLocationSearchError(err.message);
+                setLocationSearchError(
+                    err.message ||
+                        "Location search is unavailable. Check your connection and try again.",
+                );
+                return false;
             } finally {
                 setLocationSearchLoading(false);
             }
@@ -180,21 +198,28 @@ export function useDistanceContext() {
 
     // Local place names resolve instantly; anything else is geocoded via
     // Nominatim (biased toward the active location) so the boxes accept any
-    // city or area.
+    // city or area. The curated index is only consulted when the user is in
+    // its region (the Lagos fallback is active).
+    const curatedPlaces = useCuratedFallback ? LAGOS_PLACES : [];
     const {
         place: startPlace,
         loading: startPlaceLoading,
         error: startPlaceError,
         isGeocoded: startIsGeocoded,
         outsideArea: startOutsideArea,
-    } = useGeocodedPlace(customStart, nearbyPlaces, activeLocation);
+    } = useGeocodedPlace(
+        customStart,
+        nearbyPlaces,
+        activeLocation,
+        curatedPlaces,
+    );
     const {
         place: endPlace,
         loading: endPlaceLoading,
         error: endPlaceError,
         isGeocoded: endIsGeocoded,
         outsideArea: endOutsideArea,
-    } = useGeocodedPlace(customEnd, nearbyPlaces, activeLocation);
+    } = useGeocodedPlace(customEnd, nearbyPlaces, activeLocation, curatedPlaces);
 
     const routeDistanceKm = useMemo(() => {
         if (mode === "route") {
@@ -403,6 +428,10 @@ export function useDistanceContext() {
 
         userLocation: geoLocation,
         activeLocation,
+        hasLocation,
+        locationSource,
+        accuracyMeters,
+        requestLocation,
         locationLoading: geoLoading,
         locationError: geoError,
         nearbyPlaces,

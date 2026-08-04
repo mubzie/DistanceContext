@@ -19,6 +19,13 @@ import {
 import { Loader2 } from "lucide-react";
 import { MapOverlay } from "./MapOverlay";
 
+// Display-only fallback for the map before any GPS or manual location exists.
+// Deliberately neutral (world view) — never a Lagos default, so the map can't
+// look like it assumes a location the user hasn't given.
+const NEUTRAL_CENTER = [0, 0];
+const NEUTRAL_ZOOM = 2;
+const REGION_ZOOM = 9;
+
 function circleGeoJSON(lat, lng, radiusKm, points = 64) {
     const coords = [];
     const R = 6371;
@@ -137,7 +144,9 @@ export function RouteMap({
           ]
         : ringLocation
           ? [ringLocation.lng, ringLocation.lat]
-          : [3.3792, 6.5244];
+          : NEUTRAL_CENTER;
+
+    const mapZoom = route ? 10 : ringLocation ? REGION_ZOOM : NEUTRAL_ZOOM;
 
     const straightLineCoords = route
         ? [
@@ -162,7 +171,7 @@ export function RouteMap({
                         <CardDescription className="mt-1 text-sm">
                             {route
                                 ? "A single leg is shown to keep the map calm and readable."
-                                : "Select a route or enter a distance to see it on the map."}
+                                : "Set your location, then enter a distance or pick a route."}
                         </CardDescription>
                     </div>
                     {isRouteLoading && (
@@ -177,7 +186,7 @@ export function RouteMap({
                 <div className="relative overflow-hidden rounded-[1.5rem] h-full">
                     <Map
                         center={center}
-                        zoom={route ? 10 : 9}
+                        zoom={mapZoom}
                         className="h-full w-full"
                     >
                         <RecenterOnLocation
@@ -284,6 +293,13 @@ export function RouteMap({
                             showFullscreen={false}
                         />
                     </Map>
+                    {!ringLocation && !route && (
+                        <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 md:top-6">
+                            <div className="rounded-xl bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow-md backdrop-blur-md">
+                                Set your location to begin
+                            </div>
+                        </div>
+                    )}
                     <MapOverlay
                         route={route}
                         distanceKm={displayDistanceKm}
@@ -411,8 +427,12 @@ function RecenterOnLocation({ location, route }) {
 
         const center = location
             ? [location.lng, location.lat]
-            : [3.3792, 6.5244];
-        map.flyTo({ center, zoom: 9, duration: 800 });
+            : NEUTRAL_CENTER;
+        map.flyTo({
+            center,
+            zoom: location ? REGION_ZOOM : NEUTRAL_ZOOM,
+            duration: 800,
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [map, isLoaded, locationKey, routeActive]);
 

@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { formatDistance } from "../utils/format";
 import { mergePlaceLists } from "../utils/placeMatch";
-import { LAGOS_PLACES } from "../data/lagosPlaces";
 import { Card, CardContent } from "./ui/card";
 import { ContextSentence } from "./ContextSummary";
 import { RouteSuggestions } from "./RouteSuggestions";
@@ -73,6 +72,10 @@ export function DistanceInput({
     locationName,
     locationLoading,
     locationError,
+    hasLocation,
+    locationSource,
+    accuracyMeters,
+    requestLocation,
     locationQuery,
     setLocationQuery,
     locationSearchLoading,
@@ -83,15 +86,17 @@ export function DistanceInput({
     const [locationInput, setLocationInput] = useState("");
 
     const placeNames = useMemo(() => {
-        return mergePlaceLists(nearbyPlaces ?? [], LAGOS_PLACES).map(
-            (p) => p.name,
-        );
+        return mergePlaceLists(nearbyPlaces ?? []).map((p) => p.name);
     }, [nearbyPlaces]);
 
-    const handleSearchSubmit = () => {
-        handleLocationSearch(locationInput);
-        setShowLocationSearch(false);
-        setLocationInput("");
+    const handleSearchSubmit = async () => {
+        const query = locationInput;
+        if (!query.trim()) return;
+        const ok = await handleLocationSearch(query);
+        if (ok) {
+            setShowLocationSearch(false);
+            setLocationInput("");
+        }
     };
 
     const renderLocationBar = () => {
@@ -106,44 +111,55 @@ export function DistanceInput({
 
         if (showLocationSearch) {
             return (
-                <div className="flex w-full items-center gap-2">
-                    <Input
-                        value={locationInput}
-                        onChange={(e) => setLocationInput(e.target.value)}
-                        placeholder="Search for a city or area"
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSearchSubmit();
-                        }}
-                    />
-                    <button
-                        type="button"
-                        onClick={handleSearchSubmit}
-                        disabled={
-                            locationSearchLoading || !locationInput.trim()
-                        }
-                        aria-label="Search for location"
-                        className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition disabled:opacity-40"
-                    >
-                        {locationSearchLoading ? (
-                            <Loader2
-                                className="h-4 w-4 animate-spin"
-                                aria-hidden="true"
-                            />
-                        ) : (
-                            <Search className="h-4 w-4" aria-hidden="true" />
-                        )}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setShowLocationSearch(false);
-                            setLocationInput("");
-                        }}
-                        aria-label="Cancel location search"
-                        className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition"
-                    >
-                        <X className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                <div className="flex w-full flex-col gap-2">
+                    <div className="flex w-full items-center gap-2">
+                        <Input
+                            value={locationInput}
+                            onChange={(e) => setLocationInput(e.target.value)}
+                            placeholder="Search for a city or area"
+                            aria-label="Search for a city or area"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSearchSubmit();
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleSearchSubmit}
+                            disabled={
+                                locationSearchLoading || !locationInput.trim()
+                            }
+                            aria-label="Search for location"
+                            className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition disabled:opacity-40"
+                        >
+                            {locationSearchLoading ? (
+                                <Loader2
+                                    className="h-4 w-4 animate-spin"
+                                    aria-hidden="true"
+                                />
+                            ) : (
+                                <Search
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                            )}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowLocationSearch(false);
+                                setLocationInput("");
+                            }}
+                            aria-label="Cancel location search"
+                            className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition"
+                        >
+                            <X className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                    </div>
+                    {locationSearchError && (
+                        <p className="text-xs text-destructive">
+                            {locationSearchError}
+                        </p>
+                    )}
                 </div>
             );
         }
@@ -153,24 +169,46 @@ export function DistanceInput({
                 <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0" />
-                        <span>Location unavailable</span>
+                        <span>{locationError || "Location unavailable"}</span>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setShowLocationSearch(true)}
-                        className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
-                    >
-                        Set manually
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={requestLocation}
+                            className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+                        >
+                            Try again
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowLocationSearch(true)}
+                            className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+                        >
+                            Set manually
+                        </button>
+                    </div>
                 </div>
             );
         }
 
         return (
             <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex min-w-0 items-center gap-2">
                     <MapPin className="h-4 w-4 shrink-0" />
                     <span className="truncate">{locationName}</span>
+                    {locationSource === "manual" ? (
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Manual
+                        </span>
+                    ) : accuracyMeters != null && accuracyMeters > 1500 ? (
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Approx. GPS
+                        </span>
+                    ) : (
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            GPS
+                        </span>
+                    )}
                 </div>
                 <button
                     type="button"
@@ -184,12 +222,22 @@ export function DistanceInput({
     };
 
     const renderPlacesStatus = () => {
+        if (!hasLocation) {
+            if (locationLoading) return null;
+            return (
+                <p className="text-sm text-muted-foreground">
+                    Choose your location to see local context.
+                </p>
+            );
+        }
+
         if (placesLoading) {
             return (
                 <div className="flex w-full flex-col gap-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Finding places near you&hellip;
+                        Finding places near you&hellip; You can still enter a
+                        distance or choose By Route.
                     </div>
                     <div className="grid w-full gap-3 md:grid-cols-2">
                         {Array.from({ length: 6 }).map((_, i) => (
@@ -231,7 +279,10 @@ export function DistanceInput({
         if (placesError) {
             return (
                 <div className="flex items-center gap-2 text-sm text-destructive">
-                    <span>Failed to load nearby places.</span>
+                    <span>
+                        {placesError ||
+                            "Nearby places are unavailable. You can still enter a distance or choose By Route."}
+                    </span>
                     <button
                         type="button"
                         onClick={retryPlaces}

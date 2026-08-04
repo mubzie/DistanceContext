@@ -28,7 +28,7 @@ Travel time is estimated for **walking (5 km/h)** and **driving (30 km/h)**.
 | Service                                                          | Used for                      | Notes                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | Nearby places                 | Ranked by place-type importance + proximity, deduplicated. Results cached in `localStorage` for 24h to reduce repeat calls. |
-| [Nominatim](https://nominatim.org/)                              | Geocoding (reverse + forward) | Used for location search bar and manual location override.                                                                  |
+| [Nominatim](https://nominatim.org/)                              | Geocoding (reverse + forward) | Used through the `/api/geocode` proxy for location search and manual location override, with a local Lagos exact-match fallback. |
 | [OSRM](http://project-osrm.org/)                                 | Routing                       | Powers route drawing and distance/time calculation.                                                                         |
 
 All three are public/free-tier OSM-ecosystem APIs with rate limits — be considerate with request volume in development, and consider self-hosting or a paid tier before any real traffic.
@@ -50,6 +50,8 @@ npm run preview
 ```
 
 No API keys are required to run locally — Overpass, Nominatim, and OSRM are used via their public endpoints. Browser geolocation permission is required for auto-detected location; the app also supports manual location search as a fallback.
+
+The deployed geocoder proxy accepts an optional `NOMINATIM_CONTACT` environment variable so the upstream request can identify a support URL or contact address. Local Vite development uses the same `/api/geocode` path through a development proxy.
 
 ## Features
 
