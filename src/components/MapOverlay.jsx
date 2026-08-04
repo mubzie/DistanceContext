@@ -38,7 +38,7 @@ export function MapOverlay({
                 </div>
                 <div className="flex gap-4 md:gap-6">
                     <div className="flex flex-col">
-                        <span className="text-lg md:text-xl font-semibold leading-none tracking-tight">
+                        <span className="text-lg md:text-xl font-semibold leading-none tracking-tight tabular-nums">
                             {displayDistance}
                         </span>
                         <span className="mt-1 text-[10px] md:text-xs uppercase tracking-wider opacity-70">
@@ -46,7 +46,7 @@ export function MapOverlay({
                         </span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg md:text-xl font-semibold leading-none tracking-tight">
+                        <span className="text-lg md:text-xl font-semibold leading-none tracking-tight tabular-nums">
                             {displayTime}
                         </span>
                         <span className="mt-1 text-[10px] md:text-xs uppercase tracking-wider opacity-70">

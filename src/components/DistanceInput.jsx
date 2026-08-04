@@ -12,7 +12,7 @@ import {
     CircleAlert,
 } from "lucide-react";
 import { formatDistance } from "../utils/format";
-import { normalizePlace } from "../utils/placeMatch";
+import { mergePlaceLists } from "../utils/placeMatch";
 import { LAGOS_PLACES } from "../data/lagosPlaces";
 import { Card, CardContent } from "./ui/card";
 import { ContextSentence } from "./ContextSummary";
@@ -64,6 +64,7 @@ export function DistanceInput({
     nearbyPlaces,
     placesLoading,
     placesError,
+    placesFallback,
     retryPlaces,
     routeSuggestions,
     hasStartedContext,
@@ -82,23 +83,9 @@ export function DistanceInput({
     const [locationInput, setLocationInput] = useState("");
 
     const placeNames = useMemo(() => {
-        const seen = new Set();
-        const names = [];
-        for (const p of nearbyPlaces ?? []) {
-            const key = normalizePlace(p.name);
-            if (!seen.has(key)) {
-                seen.add(key);
-                names.push(p.name);
-            }
-        }
-        for (const p of LAGOS_PLACES) {
-            const key = normalizePlace(p.name);
-            if (!seen.has(key)) {
-                seen.add(key);
-                names.push(p.name);
-            }
-        }
-        return names;
+        return mergePlaceLists(nearbyPlaces ?? [], LAGOS_PLACES).map(
+            (p) => p.name,
+        );
     }, [nearbyPlaces]);
 
     const handleSearchSubmit = () => {
@@ -134,12 +121,16 @@ export function DistanceInput({
                         disabled={
                             locationSearchLoading || !locationInput.trim()
                         }
-                        className="shrink-0 rounded-lg border border-border p-2 hover:bg-muted transition disabled:opacity-40"
+                        aria-label="Search for location"
+                        className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition disabled:opacity-40"
                     >
                         {locationSearchLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2
+                                className="h-4 w-4 animate-spin"
+                                aria-hidden="true"
+                            />
                         ) : (
-                            <Search className="h-4 w-4" />
+                            <Search className="h-4 w-4" aria-hidden="true" />
                         )}
                     </button>
                     <button
@@ -148,9 +139,10 @@ export function DistanceInput({
                             setShowLocationSearch(false);
                             setLocationInput("");
                         }}
-                        className="shrink-0 rounded-lg border border-border p-2 hover:bg-muted transition"
+                        aria-label="Cancel location search"
+                        className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                 </div>
             );
@@ -217,6 +209,25 @@ export function DistanceInput({
             );
         }
 
+        if (placesFallback) {
+            return (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>
+                        Live nearby data unavailable &mdash; using built-in
+                        Lagos places.
+                    </span>
+                    <button
+                        type="button"
+                        onClick={retryPlaces}
+                        className="flex items-center gap-1 underline underline-offset-2"
+                    >
+                        <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+
         if (placesError) {
             return (
                 <div className="flex items-center gap-2 text-sm text-destructive">
@@ -226,7 +237,7 @@ export function DistanceInput({
                         onClick={retryPlaces}
                         className="flex items-center gap-1 underline underline-offset-2"
                     >
-                        <RefreshCw className="h-3 w-3" />
+                        <RefreshCw className="h-3 w-3" aria-hidden="true" />
                         Retry
                     </button>
                 </div>
@@ -287,14 +298,17 @@ export function DistanceInput({
 
                 <div className="grid w-full gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                        <span className="text-sm font-medium text-foreground">
+                        <label
+                            htmlFor="travel-mode"
+                            className="text-sm font-medium text-foreground"
+                        >
                             Travel mode
-                        </span>
+                        </label>
                         <Select
                             value={travelMode}
                             onValueChange={setTravelMode}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger id="travel-mode">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -309,18 +323,21 @@ export function DistanceInput({
                     {mode === "distance" ? (
                         <div className="grid grid-cols-[1fr_120px] gap-3">
                             <div className="space-y-2">
-                                <span className="text-sm font-medium text-foreground">
+                                <label
+                                    htmlFor="distance"
+                                    className="text-sm font-medium text-foreground"
+                                >
                                     Distance
-                                </span>
+                                </label>
                                 <Input
+                                    id="distance"
                                     type="text"
                                     inputMode="decimal"
                                     pattern="[0-9]*[.]?[0-9]*"
                                     placeholder="0"
                                     value={distanceValue}
-                                    onChange={(event) => {
-                                        const raw = event.target.value;
-                                        const cleaned = raw
+                                    onValueChange={(value) => {
+                                        const cleaned = String(value ?? "")
                                             .replace(/[^0-9.]/g, "")
                                             .replace(/(\..*)\./g, "$1");
                                         setDistanceValue(cleaned);
@@ -334,14 +351,17 @@ export function DistanceInput({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <span className="text-sm font-medium text-foreground">
+                                <label
+                                    htmlFor="distance-unit"
+                                    className="text-sm font-medium text-foreground"
+                                >
                                     Unit
-                                </span>
+                                </label>
                                 <Select
                                     value={distanceUnit}
                                     onValueChange={setDistanceUnit}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger id="distance-unit">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -356,10 +376,14 @@ export function DistanceInput({
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <span className="text-sm font-medium text-foreground">
+                                <label
+                                    htmlFor="start-place"
+                                    className="text-sm font-medium text-foreground"
+                                >
                                     Start
-                                </span>
+                                </label>
                                 <Input
+                                    id="start-place"
                                     list="nearby-places"
                                     value={customStart}
                                     onChange={(event) =>
@@ -378,16 +402,19 @@ export function DistanceInput({
                                     </p>
                                 ) : startOutsideArea ? (
                                     <p className="text-xs text-muted-foreground">
-                                        Searched &mdash; outside your nearby
-                                        area
+                                        Outside your nearby area
                                     </p>
                                 ) : null}
                             </div>
                             <div className="space-y-2">
-                                <span className="text-sm font-medium text-foreground">
+                                <label
+                                    htmlFor="end-place"
+                                    className="text-sm font-medium text-foreground"
+                                >
                                     End
-                                </span>
+                                </label>
                                 <Input
+                                    id="end-place"
                                     list="nearby-places"
                                     value={customEnd}
                                     onChange={(event) =>
@@ -406,8 +433,7 @@ export function DistanceInput({
                                     </p>
                                 ) : endOutsideArea ? (
                                     <p className="text-xs text-muted-foreground">
-                                        Searched &mdash; outside your nearby
-                                        area
+                                        Outside your nearby area
                                     </p>
                                 ) : null}
                             </div>

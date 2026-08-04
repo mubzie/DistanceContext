@@ -6,8 +6,11 @@ import { Badge } from "./ui/badge";
 export function ContextSentence({ summary, route }) {
     if (!route) return null;
     return (
-        <div className="rounded-lg bg-foreground p-6 text-background sm:p-8 w-full">
-            <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground/70">
+        <div
+            role="status"
+            className="rounded-lg bg-foreground p-6 text-background sm:p-8 w-full"
+        >
+            <p className="text-sm uppercase tracking-[0.25em] text-background/60">
                 Context
             </p>
             <p className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
@@ -87,7 +90,7 @@ export function ContextMetrics({
                                 </span>
                             )}
                     </Detail>
-                    <Detail label="Context speed">
+                    <Detail label="Assumed speed">
                         {travelMode === "walking" ? "5 km/h" : "30 km/h"}
                     </Detail>
                 </div>
@@ -103,7 +106,7 @@ function MetricCard({ icon, label, children }) {
                 {icon}
                 <span>{label}</span>
             </div>
-            <div className="text-lg font-semibold text-foreground">
+            <div className="text-lg font-semibold tabular-nums text-foreground">
                 {children}
             </div>
         </div>

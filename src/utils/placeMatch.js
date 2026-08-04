@@ -13,6 +13,24 @@ export function normalizePlace(value) {
     .replace(/\s+/g, " ");
 }
 
+// Merge place lists into one deduplicated list (by normalized name), keeping
+// the first occurrence — earlier lists win. Used to layer curated fallback
+// places under live API results without duplicate autocomplete entries or
+// duplicate route pairs.
+export function mergePlaceLists(...lists) {
+  const seen = new Set();
+  const merged = [];
+  for (const list of lists) {
+    for (const place of list ?? []) {
+      const key = normalizePlace(place.name);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(place);
+    }
+  }
+  return merged;
+}
+
 // Loose similarity of a typed query against a place name. 100 = exact,
 // 80 = name starts with query, 70 = a name token starts with query,
 // 60 = query starts with the whole name, 50 = query starts with a token.

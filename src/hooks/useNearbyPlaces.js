@@ -10,11 +10,13 @@ const TOP_PLACES = 20;
 // Public Overpass instances. The main one load-balances across backends that
 // are inconsistent about CORS headers (some GET responses lack
 // Access-Control-Allow-Origin entirely), so the documented POST interface is
-// used and mirrors are tried in order until one responds.
+// used and mirrors are tried in order until one responds. Regional mirrors
+// (e.g. overpass.osm.ch) are deliberately excluded: they answer 200 with zero
+// elements for queries outside their region, which must not be treated as a
+// valid "no places here" result or be cached.
 const OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.osm.ch/api/interpreter",
 ];
 
 async function fetchOverpass(query, signal) {
@@ -31,8 +33,15 @@ async function fetchOverpass(query, signal) {
             });
             if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
             const data = await res.json();
-            if (!data || !Array.isArray(data.elements)) {
-                throw new Error("Overpass returned no data");
+            if (
+                !data ||
+                !Array.isArray(data.elements) ||
+                data.elements.length === 0
+            ) {
+                // Empty is a failure, not a result: it usually means a mirror
+                // that doesn't serve this region (or an Overpass timeout that
+                // returned `remark` with no elements). Try the next mirror.
+                throw new Error("Overpass returned no places");
             }
             return data;
         } catch (err) {
@@ -52,7 +61,21 @@ const PLACE_WEIGHT = {
 };
 
 function cacheKey(lat, lng) {
-    return `nearby_places_v4_${lat.toFixed(1)}_${lng.toFixed(1)}`;
+    return `nearby_places_v5_${lat.toFixed(1)}_${lng.toFixed(1)}`;
+}
+
+// Older cache versions (v4 and earlier) may hold empty place arrays written
+// when the regional mirror "succeeded" with no elements — the exact bug that
+// made the map unresponsive. Purge them once so stale empties can't resurface.
+function purgeStaleCache(currentKey) {
+    const staleKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("nearby_places_v") && key !== currentKey) {
+            staleKeys.push(key);
+        }
+    }
+    for (const key of staleKeys) localStorage.removeItem(key);
 }
 
 function loadCache(lat, lng) {
@@ -92,6 +115,9 @@ export function useNearbyPlaces(location) {
         if (!location) return;
 
         const { lat, lng } = location;
+
+        const key = cacheKey(lat, lng);
+        purgeStaleCache(key);
 
         const cached = loadCache(lat, lng);
         if (cached) {
@@ -156,8 +182,10 @@ export function useNearbyPlaces(location) {
 
                 result.sort((a, b) => b.score - a.score);
 
-                setPlaces(result.slice(0, TOP_PLACES));
-                writeCache(lat, lng, result);
+                const top = result.slice(0, TOP_PLACES);
+
+                setPlaces(top);
+                if (top.length > 0) writeCache(lat, lng, top);
                 setLoading(false);
             })
             .catch((err) => {

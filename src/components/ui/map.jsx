@@ -507,11 +507,11 @@ function MapMarker({
     );
 }
 
-function MarkerContent({ children, className }) {
+function MarkerContent({ children, className, ...props }) {
     const { marker } = useMarkerContext();
 
     return createPortal(
-        <div className={cn("relative cursor-pointer", className)}>
+        <div className={cn("relative cursor-pointer", className)} {...props}>
             {children || <DefaultMarkerIcon />}
         </div>,
         marker.getElement(),

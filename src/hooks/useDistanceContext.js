@@ -4,6 +4,8 @@ import { useNearbyPlaces } from "./useNearbyPlaces";
 import { useGeocodedPlace } from "./useGeocodedPlace";
 import { haversineDistanceKm, toKilometers } from "../utils/distance";
 import { formatDistance, formatTime } from "../utils/format";
+import { mergePlaceLists } from "../utils/placeMatch";
+import { LAGOS_PLACES } from "../data/lagosPlaces";
 import {
     reverseGeocode,
     forwardGeocode,
@@ -16,6 +18,12 @@ const speedByMode = {
 };
 
 const DEFAULT_LOCATION = { lat: 6.5244, lng: 3.3792 };
+
+// Within this distance of central Lagos the curated place index is a valid
+// stand-in for live nearby data. Farther away it would present Lagos routes as
+// "nearby context" for places it isn't, so the fallback is deliberately
+// limited to the app's home region.
+const LAGOS_FALLBACK_RADIUS_KM = 50;
 const PREFS_KEY = "dc_prefs";
 
 // Local-context guardrail: routes between places farther apart than this are
@@ -48,11 +56,34 @@ export function useDistanceContext() {
     const activeLocation = geoLocation || DEFAULT_LOCATION;
 
     const {
-        places: nearbyPlaces,
+        places: remotePlaces,
         loading: placesLoading,
-        error: placesError,
+        error: remotePlacesError,
         retry: retryPlaces,
     } = useNearbyPlaces(activeLocation);
+
+    // Live places win; when they're missing or stale-failed inside the Lagos
+    // region, the curated index keeps distance mode (pairs, suggestions,
+    // autocomplete) working instead of going silently blank.
+    const useCuratedFallback = useMemo(() => {
+        if (!activeLocation) return false;
+        return (
+            haversineDistanceKm(
+                [activeLocation.lat, activeLocation.lng],
+                [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+            ) <= LAGOS_FALLBACK_RADIUS_KM
+        );
+    }, [activeLocation]);
+
+    const nearbyPlaces = useMemo(() => {
+        if (!useCuratedFallback) return remotePlaces ?? [];
+        return mergePlaceLists(remotePlaces ?? [], LAGOS_PLACES);
+    }, [remotePlaces, useCuratedFallback]);
+
+    // When the curated index is standing in, the API failure is downgraded to
+    // a notice (context still works) instead of a blocking error.
+    const placesFallback = useCuratedFallback && Boolean(remotePlacesError);
+    const placesError = placesFallback ? null : remotePlacesError;
 
     const [locationName, setLocationName] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
@@ -377,6 +408,7 @@ export function useDistanceContext() {
         nearbyPlaces,
         placesLoading,
         placesError,
+        placesFallback,
         retryPlaces,
 
         locationName,

@@ -74,6 +74,14 @@ export function RouteMap({
             return;
         }
 
+        if (
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+        ) {
+            setAnimProgress(1);
+            return;
+        }
+
         if (animRef.current) cancelAnimationFrame(animRef.current);
         setAnimProgress(0);
         startTimeRef.current = null;
@@ -114,7 +122,7 @@ export function RouteMap({
             : [];
 
     const markerClass = `h-4 w-4 rounded-full border-2 border-white shadow-lg ${
-        bouncing ? "animate-bounce" : ""
+        bouncing ? "animate-bounce motion-reduce:animate-none" : ""
     }`;
 
     // Browser geolocation may be denied on mobile; fall back to the app's
@@ -176,10 +184,16 @@ export function RouteMap({
                             location={ringLocation}
                             route={route}
                         />
-                        {route && (
+                        {mode === "route" && route && (
                             <FitRouteBounds
                                 route={route}
                                 actualRouteCoords={actualRouteCoords}
+                            />
+                        )}
+                        {mode === "distance" && (
+                            <FitDistanceRing
+                                location={ringLocation}
+                                radiusKm={routeDistanceKm}
                             />
                         )}
                         {route && (
@@ -214,7 +228,7 @@ export function RouteMap({
                                     longitude={route.startCoords[1]}
                                     latitude={route.startCoords[0]}
                                 >
-                                    <MarkerContent>
+                                    <MarkerContent aria-label={route.start}>
                                         <div
                                             className={`${markerClass} bg-foreground`}
                                         />
@@ -225,7 +239,7 @@ export function RouteMap({
                                     longitude={route.endCoords[1]}
                                     latitude={route.endCoords[0]}
                                 >
-                                    <MarkerContent>
+                                    <MarkerContent aria-label={route.end}>
                                         <div
                                             className={`${markerClass} bg-foreground`}
                                         />
@@ -235,18 +249,18 @@ export function RouteMap({
                             </>
                         )}
                         {userLocation && (
-                            <MapMarker
-                                longitude={userLocation.lng}
-                                latitude={userLocation.lat}
-                            >
-                                <MarkerContent>
-                                    <div className="relative">
-                                        <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft" />
-                                        <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
-                                    </div>
-                                </MarkerContent>
-                                <MarkerPopup>You are here</MarkerPopup>
-                            </MapMarker>
+                                <MapMarker
+                                    longitude={userLocation.lng}
+                                    latitude={userLocation.lat}
+                                >
+                                    <MarkerContent aria-label="You are here">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft motion-reduce:animate-none" />
+                                            <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
+                                        </div>
+                                    </MarkerContent>
+                                    <MarkerPopup>You are here</MarkerPopup>
+                                </MapMarker>
                         )}
                         {ringData && (
                             <MapGeoJSON
@@ -333,6 +347,50 @@ function FitRouteBounds({ route, actualRouteCoords }) {
             });
         }
     }, [map, isLoaded, fitKey]);
+
+    return null;
+}
+
+// Distance mode owns the viewport: the matched route pair can stay the same
+// while the typed number changes, so the map refits to the radius ring around
+// the active location instead of the route geometry. Debounced so fast typing
+// ("25" as "2" then "5") doesn't fire a fit per keystroke.
+function FitDistanceRing({ location, radiusKm }) {
+    const { map, isLoaded } = useMap();
+
+    useEffect(() => {
+        if (!map || !isLoaded || !location || !(radiusKm > 0)) return;
+
+        const container = map.getContainer();
+        if (!container || !container.clientHeight) return;
+        map.resize();
+
+        const reduceMotion =
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+        const timer = setTimeout(() => {
+            const lat = location.lat;
+            const lng = location.lng;
+            const dLat = radiusKm / 111.32;
+            const dLng =
+                radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+            map.fitBounds(
+                [
+                    [lng - dLng, lat - dLat],
+                    [lng + dLng, lat + dLat],
+                ],
+                {
+                    padding: 48,
+                    maxZoom: 13,
+                    animate: !reduceMotion,
+                    duration: 600,
+                },
+            );
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [map, isLoaded, location?.lat, location?.lng, radiusKm]);
 
     return null;
 }
