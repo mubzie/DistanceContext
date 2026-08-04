@@ -52,7 +52,7 @@ const PLACE_WEIGHT = {
 };
 
 function cacheKey(lat, lng) {
-    return `nearby_places_v3_${lat.toFixed(1)}_${lng.toFixed(1)}`;
+    return `nearby_places_v4_${lat.toFixed(1)}_${lng.toFixed(1)}`;
 }
 
 function loadCache(lat, lng) {
@@ -134,7 +134,7 @@ export function useNearbyPlaces(location) {
                     if (!name || seen.has(name)) continue;
                     seen.add(name);
                     const distanceKm = haversineDistanceKm(
-                        [el.lat, el.lng],
+                        [el.lat, el.lon],
                         [lat, lng],
                     );
                     const weight = PLACE_WEIGHT[placeType] ?? 0;

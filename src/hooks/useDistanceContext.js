@@ -61,8 +61,8 @@ export function useDistanceContext() {
 
     const saved = loadPrefs();
 
-    const [mode, setMode] = useState(saved.mode ?? "distance");
-    const [distanceValue, setDistanceValue] = useState("2");
+    const [mode, setMode] = useState("distance");
+    const [distanceValue, setDistanceValue] = useState("");
     const [distanceUnit, setDistanceUnit] = useState(
         saved.distanceUnit ?? "km",
     );
@@ -73,9 +73,9 @@ export function useDistanceContext() {
     useEffect(() => {
         localStorage.setItem(
             PREFS_KEY,
-            JSON.stringify({ mode, travelMode, distanceUnit }),
+            JSON.stringify({ travelMode, distanceUnit }),
         );
-    }, [mode, travelMode, distanceUnit]);
+    }, [travelMode, distanceUnit]);
 
     useEffect(() => {
         if (!activeLocation) return;
@@ -201,6 +201,10 @@ export function useDistanceContext() {
         }
 
         if (!placePairs.length) return null;
+
+        // No context until a distance is actually entered — an empty input
+        // must not resolve to a "closest pair" and render the context card.
+        if (!routeDistanceKm) return null;
 
         return placePairs.reduce((best, pair) => {
             const bestDelta = Math.abs(best.baseDistanceKm - routeDistanceKm);
@@ -362,6 +366,7 @@ export function useDistanceContext() {
         maxRouteKm: MAX_ROUTE_KM,
 
         userLocation: geoLocation,
+        activeLocation,
         locationLoading: geoLoading,
         locationError: geoError,
         nearbyPlaces,
