@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { DistanceInput } from "./components/DistanceInput";
-import { ContextSummary } from "./components/ContextSummary";
+import { RouteSuggestions } from "./components/RouteSuggestions";
+import { ContextMetrics } from "./components/ContextSummary";
 import { Skeleton } from "./components/ui/skeleton";
 import { useDistanceContext } from "./hooks/useDistanceContext";
 
@@ -31,6 +32,7 @@ export default function App() {
                             actualRouteCoords={context.actualRouteCoords}
                             isRouteLoading={context.isRouteLoading}
                             userLocation={context.userLocation}
+                            activeLocation={context.activeLocation}
                             mode={context.mode}
                             routeDistanceKm={context.routeDistanceKm}
                             displayDistanceKm={context.displayDistanceKm}
@@ -44,21 +46,33 @@ export default function App() {
                 <div className="left-panel flex flex-1 gap-6 flex-col px-4 py-8 md:px-6 md:py-14 overflow-y-auto">
                     <div className="mx-auto w-full max-w-[600px] flex flex-col gap-6">
                         <DistanceInput {...context} />
-                        <div className="space-y-6">
-                            <ContextSummary
-                                summary={context.summary}
-                                routeDistanceKm={context.routeDistanceKm}
-                                displayDistanceKm={context.displayDistanceKm}
-                                baseDistanceKm={context.baseDistanceKm}
-                                multiplier={context.multiplier}
-                                estimatedMinutes={context.estimatedMinutes}
-                                travelMode={context.travelMode}
-                                route={context.mapRoute}
-                                mode={context.mode}
+                        {context.mapRoute && (
+                            <RouteSuggestions
+                                routeSuggestions={context.routeSuggestions}
+                                nearbyPlaces={context.nearbyPlaces}
+                                placesLoading={context.placesLoading}
+                                placesError={context.placesError}
                                 distanceUnit={context.distanceUnit}
-                                actualRouteKm={context.actualRouteKm}
+                                customStart={context.customStart}
+                                customEnd={context.customEnd}
+                                setMode={context.setMode}
+                                setCustomStart={context.setCustomStart}
+                                setCustomEnd={context.setCustomEnd}
                             />
-                        </div>
+                        )}
+                        <ContextMetrics
+                            summary={context.summary}
+                            routeDistanceKm={context.routeDistanceKm}
+                            displayDistanceKm={context.displayDistanceKm}
+                            baseDistanceKm={context.baseDistanceKm}
+                            multiplier={context.multiplier}
+                            estimatedMinutes={context.estimatedMinutes}
+                            travelMode={context.travelMode}
+                            route={context.mapRoute}
+                            mode={context.mode}
+                            distanceUnit={context.distanceUnit}
+                            actualRouteKm={context.actualRouteKm}
+                        />
                     </div>
                 </div>
             </div>

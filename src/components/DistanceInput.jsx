@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
     MapPinned,
     Route,
-    MoveRight,
     Loader2,
     MapPin,
     Search,
@@ -16,6 +15,8 @@ import { formatDistance } from "../utils/format";
 import { normalizePlace } from "../utils/placeMatch";
 import { LAGOS_PLACES } from "../data/lagosPlaces";
 import { Card, CardContent } from "./ui/card";
+import { ContextSentence } from "./ContextSummary";
+import { RouteSuggestions } from "./RouteSuggestions";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import {
     Select,
@@ -51,6 +52,14 @@ export function DistanceInput({
     routeTooFar,
     maxRouteKm,
     routeDistanceKm,
+
+    summary,
+    displayDistanceKm,
+    baseDistanceKm,
+    multiplier,
+    estimatedMinutes,
+    mapRoute,
+    actualRouteKm,
 
     nearbyPlaces,
     placesLoading,
@@ -89,9 +98,6 @@ export function DistanceInput({
         }
         return names;
     }, [nearbyPlaces]);
-
-    const isActive = (route) =>
-        customStart === route.start && customEnd === route.end;
 
     const handleSearchSubmit = () => {
         handleLocationSearch(locationInput);
@@ -421,62 +427,27 @@ export function DistanceInput({
 
                 {renderPlacesStatus()}
 
-                {placesLoading ||
-                placesError ||
-                !nearbyPlaces ||
-                nearbyPlaces.length < MIN_PLACES
-                    ? null
-                    : routeSuggestions.length === 0 && (
-                          <p className="text-sm text-muted-foreground">
-                              Enter a distance to see matching routes.
-                          </p>
-                      )}
-
-                {!placesLoading &&
-                    !placesError &&
-                    nearbyPlaces &&
-                    nearbyPlaces.length >= MIN_PLACES && (
-                        <div className="grid w-full gap-3 md:grid-cols-2">
-                            {routeSuggestions.map((route) => {
-                                const active = isActive(route);
-                                return (
-                                    <button
-                                        key={`${route.start}-${route.end}`}
-                                        type="button"
-                                        onClick={() => {
-                                            setMode("route");
-                                            setCustomStart(route.start);
-                                            setCustomEnd(route.end);
-                                        }}
-                                        className={`rounded-lg border px-4 py-4 text-left transition ${
-                                            active
-                                                ? "border-foreground bg-foreground text-background"
-                                                : "border-border bg-card text-muted-foreground hover:border-border/80"
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <MoveRight className="h-4 w-4" />
-                                            <span className="font-medium">
-                                                {route.start} &rarr; {route.end}
-                                            </span>
-                                        </div>
-                                        <p
-                                            className={`mt-1 text-sm ${
-                                                active
-                                                    ? "text-muted-foreground/70"
-                                                    : "text-muted-foreground"
-                                            }`}
-                                        >
-                                            {formatDistance(
-                                                route.baseDistanceKm,
-                                                distanceUnit,
-                                            )}
-                                        </p>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                <div className="w-full">
+                    {mapRoute ? (
+                        <ContextSentence
+                            summary={summary}
+                            route={mapRoute}
+                        />
+                    ) : (
+                        <RouteSuggestions
+                            routeSuggestions={routeSuggestions}
+                            nearbyPlaces={nearbyPlaces}
+                            placesLoading={placesLoading}
+                            placesError={placesError}
+                            distanceUnit={distanceUnit}
+                            customStart={customStart}
+                            customEnd={customEnd}
+                            setMode={setMode}
+                            setCustomStart={setCustomStart}
+                            setCustomEnd={setCustomEnd}
+                        />
                     )}
+                </div>
             </CardContent>
         </Card>
     );

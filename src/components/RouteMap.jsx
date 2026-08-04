@@ -56,6 +56,7 @@ export function RouteMap({
     actualRouteCoords,
     isRouteLoading,
     userLocation,
+    activeLocation,
     mode,
     routeDistanceKm,
     displayDistanceKm,
@@ -116,13 +117,18 @@ export function RouteMap({
         bouncing ? "animate-bounce" : ""
     }`;
 
+    // Browser geolocation may be denied on mobile; fall back to the app's
+    // active location (real GPS or the default area) so the distance ring
+    // still responds to input.
+    const ringLocation = userLocation ?? activeLocation;
+
     const center = route
         ? [
               (route.startCoords[1] + route.endCoords[1]) / 2,
               (route.startCoords[0] + route.endCoords[0]) / 2,
           ]
-        : userLocation
-          ? [userLocation.lng, userLocation.lat]
+        : ringLocation
+          ? [ringLocation.lng, ringLocation.lat]
           : [3.3792, 6.5244];
 
     const straightLineCoords = route
@@ -132,9 +138,9 @@ export function RouteMap({
           ]
         : [];
 
-    const showRing = mode === "distance" && routeDistanceKm > 0 && userLocation;
+    const showRing = mode === "distance" && routeDistanceKm > 0 && ringLocation;
     const ringData = showRing
-        ? circleGeoJSON(userLocation.lat, userLocation.lng, routeDistanceKm)
+        ? circleGeoJSON(ringLocation.lat, ringLocation.lng, routeDistanceKm)
         : null;
 
     return (
@@ -167,7 +173,7 @@ export function RouteMap({
                         className="h-full w-full"
                     >
                         <RecenterOnLocation
-                            location={userLocation}
+                            location={ringLocation}
                             route={route}
                         />
                         {route && (
@@ -287,6 +293,14 @@ function FitRouteBounds({ route, actualRouteCoords }) {
 
     useEffect(() => {
         if (!map || !isLoaded) return;
+
+        // The map may have been constructed before the route panel layout
+        // settled (sticky panel on mobile/desktop). A stale canvas size makes
+        // fitBounds compute a wrong viewport, so resize first and bail if the
+        // container isn't laid out yet.
+        const container = map.getContainer();
+        if (!container || !container.clientHeight) return;
+        map.resize();
 
         if (actualRouteCoords?.length > 1) {
             let minLng = Infinity,

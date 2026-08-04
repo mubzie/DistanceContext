@@ -242,7 +242,14 @@ const Map = forwardRef(function Map(
             styleSwapInFlightRef.current = false;
             setIsStyleLoaded(true);
         };
-        const loadHandler = () => setIsLoaded(true);
+        const loadHandler = () => {
+            setIsLoaded(true);
+            // A loaded map has a loaded style. If the initial `style.load`
+            // event fired before the listener was attached, `isStyleLoaded`
+            // would stay false forever and every layer/child gated on it
+            // (routes, rings) would silently never render.
+            setIsStyleLoaded(true);
+        };
 
         // Viewport change handler - skip if triggered by internal update
         const handleMove = () => {
