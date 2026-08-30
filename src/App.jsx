@@ -43,7 +43,7 @@ export default function App() {
                 </div>
 
                 <div className="left-panel flex flex-1 gap-6 flex-col px-4 py-8 md:px-6 md:py-14 overflow-y-auto">
-                    <div className="mx-auto w-full max-w-[600px] flex flex-col gap-6">
+                    <div className="mx-auto my-auto w-full max-w-[600px] flex flex-col gap-6">
                         <DistanceInput {...context} />
                         <ContextMetrics
                             summary={context.summary}

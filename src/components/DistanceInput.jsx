@@ -26,8 +26,22 @@ import {
 } from "./ui/select";
 import { Input } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
+import {
+    Combobox,
+    ComboboxInput,
+    ComboboxContent,
+    ComboboxList,
+    ComboboxCollection,
+    ComboboxEmpty,
+    ComboboxItem,
+} from "./ui/combobox";
 
 const MIN_PLACES = 2;
+
+const textActionClasses =
+    "inline-flex min-h-6 items-center rounded-md px-0.5 text-sm font-medium underline underline-offset-2 hover:text-foreground transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const iconActionClasses =
+    "shrink-0 rounded-lg border border-border p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40";
 
 export function DistanceInput({
     mode,
@@ -129,7 +143,7 @@ export function DistanceInput({
                                 locationSearchLoading || !locationInput.trim()
                             }
                             aria-label="Search for location"
-                            className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition disabled:opacity-40"
+                            className={iconActionClasses}
                         >
                             {locationSearchLoading ? (
                                 <Loader2
@@ -150,7 +164,7 @@ export function DistanceInput({
                                 setLocationInput("");
                             }}
                             aria-label="Cancel location search"
-                            className="shrink-0 rounded-lg border border-border p-2.5 hover:bg-muted transition"
+                            className={iconActionClasses}
                         >
                             <X className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -175,14 +189,14 @@ export function DistanceInput({
                         <button
                             type="button"
                             onClick={requestLocation}
-                            className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+                            className={textActionClasses}
                         >
                             Try again
                         </button>
                         <button
                             type="button"
                             onClick={() => setShowLocationSearch(true)}
-                            className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+                            className={textActionClasses}
                         >
                             Set manually
                         </button>
@@ -213,7 +227,7 @@ export function DistanceInput({
                 <button
                     type="button"
                     onClick={() => setShowLocationSearch(true)}
-                    className="shrink-0 text-sm font-medium underline underline-offset-2 hover:text-foreground transition"
+                    className={textActionClasses}
                 >
                     Change
                 </button>
@@ -267,7 +281,7 @@ export function DistanceInput({
                     <button
                         type="button"
                         onClick={retryPlaces}
-                        className="flex items-center gap-1 underline underline-offset-2"
+                        className="inline-flex min-h-6 items-center gap-1 rounded-md underline underline-offset-2 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                         <RefreshCw className="h-3 w-3" aria-hidden="true" />
                         Retry
@@ -286,7 +300,7 @@ export function DistanceInput({
                     <button
                         type="button"
                         onClick={retryPlaces}
-                        className="flex items-center gap-1 underline underline-offset-2"
+                        className="inline-flex min-h-6 items-center gap-1 rounded-md underline underline-offset-2 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                         <RefreshCw className="h-3 w-3" aria-hidden="true" />
                         Retry
@@ -315,10 +329,10 @@ export function DistanceInput({
                     <p className="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">
                         DistanceContext
                     </p>
-                    <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                    <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                         Make distances feel familiar
                     </h1>
-                    <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground">
+                    <p className="mx-auto max-w-2xl text-pretty text-base leading-7 text-muted-foreground">
                         Turn a number into a route you already know, plus the
                         time it would likely take.
                     </p>
@@ -426,73 +440,28 @@ export function DistanceInput({
                         </div>
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="start-place"
-                                    className="text-sm font-medium text-foreground"
-                                >
-                                    Start
-                                </label>
-                                <Input
-                                    id="start-place"
-                                    list="nearby-places"
-                                    value={customStart}
-                                    onChange={(event) =>
-                                        setCustomStart(event.target.value)
-                                    }
-                                    placeholder="Start location"
-                                />
-                                {startPlaceError ? (
-                                    <p className="text-xs text-destructive">
-                                        {startPlaceError}
-                                    </p>
-                                ) : startPlaceLoading ? (
-                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                        Finding {customStart.trim()}&hellip;
-                                    </p>
-                                ) : startOutsideArea ? (
-                                    <p className="text-xs text-muted-foreground">
-                                        Outside your nearby area
-                                    </p>
-                                ) : null}
-                            </div>
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="end-place"
-                                    className="text-sm font-medium text-foreground"
-                                >
-                                    End
-                                </label>
-                                <Input
-                                    id="end-place"
-                                    list="nearby-places"
-                                    value={customEnd}
-                                    onChange={(event) =>
-                                        setCustomEnd(event.target.value)
-                                    }
-                                    placeholder="End location"
-                                />
-                                {endPlaceError ? (
-                                    <p className="text-xs text-destructive">
-                                        {endPlaceError}
-                                    </p>
-                                ) : endPlaceLoading ? (
-                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                        Finding {customEnd.trim()}&hellip;
-                                    </p>
-                                ) : endOutsideArea ? (
-                                    <p className="text-xs text-muted-foreground">
-                                        Outside your nearby area
-                                    </p>
-                                ) : null}
-                            </div>
-                            <datalist id="nearby-places">
-                                {placeNames.map((name) => (
-                                    <option key={name} value={name} />
-                                ))}
-                            </datalist>
+                            <PlaceCombobox
+                                id="start-place"
+                                label="Start"
+                                placeholder="Start location"
+                                value={customStart}
+                                onValueChange={setCustomStart}
+                                items={placeNames}
+                                error={startPlaceError}
+                                loading={startPlaceLoading}
+                                outsideArea={startOutsideArea}
+                            />
+                            <PlaceCombobox
+                                id="end-place"
+                                label="End"
+                                placeholder="End location"
+                                value={customEnd}
+                                onValueChange={setCustomEnd}
+                                items={placeNames}
+                                error={endPlaceError}
+                                loading={endPlaceLoading}
+                                outsideArea={endOutsideArea}
+                            />
                             {routeTooFar && (
                                 <p className="sm:col-span-2 flex items-center gap-1.5 text-xs text-destructive">
                                     <CircleAlert className="h-3.5 w-3.5 shrink-0" />
@@ -513,13 +482,11 @@ export function DistanceInput({
                 {renderPlacesStatus()}
 
                 <div className="w-full">
-                    {hasStartedContext ? (
-                        mapRoute && (
-                            <ContextSentence
-                                summary={summary}
-                                route={mapRoute}
-                            />
-                        )
+                    {mapRoute && (hasStartedContext || mode === "route") ? (
+                        <ContextSentence
+                            summary={summary}
+                            route={mapRoute}
+                        />
                     ) : (
                         <RouteSuggestions
                             routeSuggestions={routeSuggestions}
@@ -538,5 +505,65 @@ export function DistanceInput({
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+function PlaceCombobox({
+    id,
+    label,
+    placeholder,
+    value,
+    onValueChange,
+    items,
+    error,
+    loading,
+    outsideArea,
+}) {
+    return (
+        <div className="space-y-2">
+            <label
+                htmlFor={id}
+                className="text-sm font-medium text-foreground"
+            >
+                {label}
+            </label>
+            <Combobox
+                items={items}
+                value={value || null}
+                onValueChange={(next) => onValueChange(next ?? "")}
+                inputValue={value}
+                onInputValueChange={onValueChange}
+                autoHighlight
+            >
+                <ComboboxInput id={id} placeholder={placeholder} />
+                <ComboboxContent>
+                    <ComboboxList>
+                        <ComboboxCollection>
+                            {(name) => (
+                                <ComboboxItem key={name} value={name}>
+                                    {name}
+                                </ComboboxItem>
+                            )}
+                        </ComboboxCollection>
+                    </ComboboxList>
+                    <ComboboxEmpty>
+                        No nearby match &mdash; press Enter to search this
+                        place.
+                    </ComboboxEmpty>
+                </ComboboxContent>
+            </Combobox>
+            {error ? (
+                <p className="text-xs text-destructive">{error}</p>
+            ) : loading ? (
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Finding {value.trim()}&hellip;
+                </p>
+            ) : outsideArea ? (
+                <p className="text-xs text-muted-foreground">
+                    Outside your nearby area
+                </p>
+            ) : null}
+        </div>
     );
 }

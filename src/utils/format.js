@@ -20,6 +20,16 @@ export function formatTime(minutes) {
     return `${hours} hour${hours === 1 ? "" : "s"} ${remaining} minute${remaining === 1 ? "" : "s"}`;
 }
 
+export function formatTimeShort(minutes) {
+    const rounded = Math.max(1, Math.round(minutes));
+    if (rounded < 60) {
+        return `${rounded} min`;
+    }
+    const hours = Math.floor(rounded / 60);
+    const remaining = rounded % 60;
+    return remaining ? `${hours} h ${remaining} min` : `${hours} h`;
+}
+
 const KM_TO_MILES = 0.621371;
 
 export function distanceInUnit(km, unit) {
