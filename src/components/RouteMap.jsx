@@ -14,8 +14,13 @@ import {
     CardHeader,
     CardContent,
 } from "./ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { MapOverlay } from "./MapOverlay";
+
+// Sole source of the map's blue (routes, ring). MapLibre paint properties do
+// not resolve CSS variables, so it's duplicated as a Tailwind token
+// `--color-map-accent` in index.css for DOM-side classes; keep them in sync.
+const MAP_ACCENT = "#3b82f6";
 
 // Display-only fallback for the map before any GPS or manual location exists.
 // Deliberately neutral (world view) — never a Lagos default, so the map can't
@@ -206,14 +211,14 @@ export function RouteMap({
                             <>
                                 <MapRoute
                                     coordinates={animatedCoords}
-                                    color="#3b82f6"
+                                    color={MAP_ACCENT}
                                     width={12}
                                     opacity={0.15}
                                     interactive={false}
                                 />
                                 <MapRoute
                                     coordinates={animatedCoords}
-                                    color="#3b82f6"
+                                    color={MAP_ACCENT}
                                     width={4}
                                     opacity={0.9}
                                 />
@@ -253,7 +258,7 @@ export function RouteMap({
                                     <MarkerContent aria-label="You are here">
                                         <div className="relative">
                                             <div className="absolute inset-0 h-4 w-4 rounded-full animate-pulse-soft motion-reduce:animate-none" />
-                                            <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-500/50" />
+                                            <div className="relative h-4 w-4 rounded-full border-2 border-white bg-map-accent shadow-lg ring-2 ring-map-accent/50" />
                                         </div>
                                     </MarkerContent>
                                     <MarkerPopup>You are here</MarkerPopup>
@@ -263,11 +268,11 @@ export function RouteMap({
                             <MapGeoJSON
                                 data={ringData}
                                 fillPaint={{
-                                    "fill-color": "#3b82f6",
+                                    "fill-color": MAP_ACCENT,
                                     "fill-opacity": 0.08,
                                 }}
                                 linePaint={{
-                                    "line-color": "#3b82f6",
+                                    "line-color": MAP_ACCENT,
                                     "line-width": 2,
                                     "line-opacity": 0.4,
                                     "line-dasharray": [4, 8],
@@ -283,7 +288,8 @@ export function RouteMap({
                     </Map>
                     {!ringLocation && !route && (
                         <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 md:top-6">
-                            <div className="rounded-xl bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow-md backdrop-blur-md">
+                            <div className="flex items-center gap-1.5 rounded-xl bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow-md backdrop-blur-md">
+                                <MapPin className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                                 Set your location to begin
                             </div>
                         </div>

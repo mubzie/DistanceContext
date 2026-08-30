@@ -1,5 +1,9 @@
 import { Clock3, Gauge, MoveRight } from "lucide-react";
-import { formatDistance, formatNumber, formatTime } from "../utils/format";
+import {
+    formatDistance,
+    formatNumber,
+    formatTimeShort,
+} from "../utils/format";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 
@@ -13,7 +17,7 @@ export function ContextSentence({ summary, route }) {
             <p className="text-sm uppercase tracking-[0.25em] text-background/60">
                 Context
             </p>
-            <p className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
+            <p className="mt-3 text-balance text-2xl font-semibold leading-snug sm:text-3xl">
                 {summary}
             </p>
         </div>
@@ -46,7 +50,7 @@ export function ContextMetrics({
                         icon={<Gauge className="h-4 w-4" />}
                         label="Base route"
                     >
-                        {formatDistance(baseDistanceKm, distanceUnit, 2)}
+                        {formatDistance(baseDistanceKm, distanceUnit)}
                     </MetricCard>
                     <MetricCard
                         icon={<MoveRight className="h-4 w-4" />}
@@ -58,7 +62,7 @@ export function ContextMetrics({
                         icon={<Clock3 className="h-4 w-4" />}
                         label="Estimated time"
                     >
-                        {formatTime(estimatedMinutes)}
+                        {formatTimeShort(estimatedMinutes)}
                     </MetricCard>
                 </div>
 
@@ -101,7 +105,7 @@ export function ContextMetrics({
 
 function MetricCard({ icon, label, children }) {
     return (
-        <div className="flex flex-col gap-2 rounded-[14px] bg-card p-5 shadow-[0_0_0_1px_rgba(10,10,10,0.1)]">
+        <div className="flex flex-col gap-2 rounded-lg bg-card p-5 shadow-[0_0_0_1px_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {icon}
                 <span>{label}</span>
@@ -115,7 +119,7 @@ function MetricCard({ icon, label, children }) {
 
 function Detail({ label, children }) {
     return (
-        <div className="rounded-[18px] bg-muted p-4">
+        <div className="rounded-lg bg-muted p-4">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="mt-1 text-base font-medium text-foreground">
                 {children}

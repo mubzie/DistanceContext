@@ -69,7 +69,7 @@ function CardContent({ className, ...props }) {
     return (
         <div
             data-slot="card-content"
-            className={cn("px-(--card-spacin)", className)}
+            className={cn("px-(--card-spacing)", className)}
             {...props}
         />
     );

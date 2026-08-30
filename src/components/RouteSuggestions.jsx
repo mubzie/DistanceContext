@@ -1,4 +1,3 @@
-import { MoveRight } from "lucide-react";
 import { formatDistance } from "../utils/format";
 
 const MIN_PLACES = 2;
@@ -49,22 +48,19 @@ export function RouteSuggestions({
                                         setCustomStart(route.start);
                                         setCustomEnd(route.end);
                                     }}
-                                    className={`rounded-lg border px-4 py-4 text-left transition ${
+                                    className={`rounded-lg border px-4 py-4 text-left transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${
                                         active
                                             ? "border-foreground bg-foreground text-background"
-                                            : "border-border bg-card text-muted-foreground hover:border-border/80"
+                                            : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:bg-muted/50"
                                     }`}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <MoveRight className="h-4 w-4" />
-                                        <span className="font-medium">
-                                            {route.start} &rarr; {route.end}
-                                        </span>
-                                    </div>
+                                    <span className="font-medium">
+                                        {route.start} &rarr; {route.end}
+                                    </span>
                                     <p
                                         className={`mt-1 text-sm ${
                                             active
-                                                ? "text-muted-foreground/70"
+                                                ? "text-background/70"
                                                 : "text-muted-foreground"
                                         }`}
                                     >
