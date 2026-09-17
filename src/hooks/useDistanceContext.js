@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGeolocation } from "./useGeolocation";
 import { useNearbyPlaces } from "./useNearbyPlaces";
 import { useGeocodedPlace } from "./useGeocodedPlace";
+import { useAnchors } from "./useAnchors";
+import { buildAnchorFrames, framePhrase } from "../utils/anchor";
 import { haversineDistanceKm, toKilometers } from "../utils/distance";
 import { formatDistance, formatTime } from "../utils/format";
 import { mergePlaceLists } from "../utils/placeMatch";
@@ -116,6 +118,17 @@ export function useDistanceContext() {
     // enters a distance or picks a suggestion, they never come back until a
     // full reload. Never persisted.
     const [hasStartedContext, setHasStartedContext] = useState(false);
+
+    // Anchors are the user's own known routes (Home → Work, the school run).
+    // Kept in their own storage record so prefs can't overwrite them.
+    const {
+        anchors,
+        addAnchor,
+        removeAnchor,
+        renameAnchor,
+        canAdd: canAddAnchor,
+        maxAnchors,
+    } = useAnchors();
 
     useEffect(() => {
         localStorage.setItem(
@@ -234,6 +247,17 @@ export function useDistanceContext() {
         return toKilometers(Number(distanceValue) || 0, distanceUnit);
     }, [mode, startPlace, endPlace, distanceValue, distanceUnit]);
 
+    // Anchors frame the entered distance against routes the user already knows.
+    // They are compared as straight-line spans (the same measure routeDistanceKm
+    // uses), never against OSRM road distance, so anchor framing and the
+    // "Base route" metric can't contradict each other.
+    const anchorFrames = useMemo(() => {
+        if (!routeDistanceKm) return [];
+        return buildAnchorFrames(routeDistanceKm, anchors);
+    }, [anchors, routeDistanceKm]);
+
+    const primaryAnchorFrame = anchorFrames[0] ?? null;
+
     // Blocked routes: both ends resolved but farther apart than the local
     // context allows. Kept out of contextualRoute so no OSRM request is made
     // and no summary/map route is produced; the input shows the reason.
@@ -324,8 +348,17 @@ export function useDistanceContext() {
         const travelWord =
             travelMode === "walking" ? "walking" : "driving or transit";
         const roundedMultiplier = Math.max(1, Math.round(multiplier));
-        const distanceLabel = formatDistance(displayDistanceKm, distanceUnit);
         const timeLabel = formatTime(estimatedMinutes);
+
+        // A pinned anchor outranks the algorithmic pair — it is the framing the
+        // user chose. It names routeDistanceKm (the span the frame was built
+        // from) so the sentence agrees with itself; the road distance is still
+        // reported separately in the metrics card.
+        if (primaryAnchorFrame) {
+            return `${formatDistance(routeDistanceKm, distanceUnit)} is ${framePhrase(primaryAnchorFrame)}. It will take you about ${timeLabel}.`;
+        }
+
+        const distanceLabel = formatDistance(displayDistanceKm, distanceUnit);
         return `${distanceLabel} is like ${travelWord} from ${contextualRoute.start} to ${contextualRoute.end}${roundedMultiplier > 1 ? ` ${roundedMultiplier} times` : ""}. It will take you about ${timeLabel}.`;
     }, [
         contextualRoute,
@@ -333,10 +366,31 @@ export function useDistanceContext() {
         distanceUnit,
         estimatedMinutes,
         multiplier,
+        primaryAnchorFrame,
+        routeDistanceKm,
         travelMode,
     ]);
 
     const mapRoute = contextualRoute;
+
+    // Pins whatever route is on screen — the algorithmic pair in distance mode,
+    // the chosen pair in route mode — as an anchor the user can name.
+    const pinCurrentRoute = useCallback(() => {
+        if (!mapRoute) return { ok: false, reason: "no-route" };
+        return addAnchor({
+            label: `${mapRoute.start} → ${mapRoute.end}`,
+            a: {
+                name: mapRoute.start,
+                lat: mapRoute.startCoords[0],
+                lng: mapRoute.startCoords[1],
+            },
+            b: {
+                name: mapRoute.end,
+                lat: mapRoute.endCoords[0],
+                lng: mapRoute.endCoords[1],
+            },
+        });
+    }, [mapRoute, addAnchor]);
 
     const displayedMultiplier = Math.max(1, Math.round(multiplier));
 
@@ -461,5 +515,14 @@ export function useDistanceContext() {
         isRouteLoading,
         hasStartedContext,
         setHasStartedContext,
+
+        anchors,
+        anchorFrames,
+        primaryAnchorFrame,
+        pinCurrentRoute,
+        removeAnchor,
+        renameAnchor,
+        canAddAnchor,
+        maxAnchors,
     };
 }
