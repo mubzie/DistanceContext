@@ -81,4 +81,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["maplibre-gl"],
   },
+  // Unit tests cover the pure util layer only (distance, format, place
+  // matching, anchors) so they need no DOM — keep `environment: "node"` and
+  // avoid a jsdom dependency until hook/component tests are actually wanted.
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.js"],
+    restoreMocks: true,
+  },
 });
