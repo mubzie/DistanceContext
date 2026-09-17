@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { DistanceInput } from "./components/DistanceInput";
+import { AnchorPanel } from "./components/AnchorPanel";
 import { ContextMetrics } from "./components/ContextSummary";
 import { Skeleton } from "./components/ui/skeleton";
 import { useDistanceContext } from "./hooks/useDistanceContext";
@@ -57,6 +58,19 @@ export default function App() {
                             mode={context.mode}
                             distanceUnit={context.distanceUnit}
                             actualRouteKm={context.actualRouteKm}
+                        />
+                        <AnchorPanel
+                            anchors={context.anchors}
+                            maxAnchors={context.maxAnchors}
+                            mapRoute={context.mapRoute}
+                            pinCurrentRoute={context.pinCurrentRoute}
+                            removeAnchor={context.removeAnchor}
+                            renameAnchor={context.renameAnchor}
+                            distanceUnit={context.distanceUnit}
+                            setMode={context.setMode}
+                            setCustomStart={context.setCustomStart}
+                            setCustomEnd={context.setCustomEnd}
+                            onSelect={() => context.setHasStartedContext(true)}
                         />
                     </div>
                 </div>

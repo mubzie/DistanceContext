@@ -35,13 +35,10 @@ import {
     ComboboxEmpty,
     ComboboxItem,
 } from "./ui/combobox";
+import { AnchorLadder } from "./AnchorLadder";
+import { iconActionClasses, textActionClasses } from "../lib/actionStyles";
 
 const MIN_PLACES = 2;
-
-const textActionClasses =
-    "inline-flex min-h-6 items-center rounded-md px-0.5 text-sm font-medium underline underline-offset-2 hover:text-foreground transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
-const iconActionClasses =
-    "shrink-0 rounded-lg border border-border p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40";
 
 export function DistanceInput({
     mode,
@@ -80,6 +77,7 @@ export function DistanceInput({
     placesFallback,
     retryPlaces,
     routeSuggestions,
+    anchorFrames,
     hasStartedContext,
     setHasStartedContext,
 
@@ -483,10 +481,16 @@ export function DistanceInput({
 
                 <div className="w-full">
                     {mapRoute && (hasStartedContext || mode === "route") ? (
-                        <ContextSentence
-                            summary={summary}
-                            route={mapRoute}
-                        />
+                        <div className="flex flex-col gap-3">
+                            <ContextSentence
+                                summary={summary}
+                                route={mapRoute}
+                            />
+                            <AnchorLadder
+                                frames={anchorFrames}
+                                distanceUnit={distanceUnit}
+                            />
+                        </div>
                     ) : (
                         <RouteSuggestions
                             routeSuggestions={routeSuggestions}
