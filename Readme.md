@@ -27,7 +27,7 @@ Travel time is estimated for **walking (5 km/h)** and **driving (30 km/h)**.
 
 | Service                                                          | Used for                      | Notes                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | Nearby places                 | Ranked by place-type importance + proximity, deduplicated. Results cached in `localStorage` for 24h to reduce repeat calls. |
+| [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | Nearby places                 | Ranked by place-type importance + proximity, deduplicated. Results cached in `localStorage` for 12h to reduce repeat calls. |
 | [Nominatim](https://nominatim.org/)                              | Geocoding (reverse + forward) | Used through the `/api/geocode` proxy for location search and manual location override, with a local Lagos exact-match fallback. |
 | [OSRM](http://project-osrm.org/)                                 | Routing                       | Powers route drawing and distance/time calculation.                                                                         |
 
@@ -47,6 +47,12 @@ npm run build
 
 # preview the production build locally
 npm run preview
+
+# run the unit test suite
+npm test
+
+# unit tests in watch mode
+npm run test:watch
 ```
 
 No API keys are required to run locally — Overpass, Nominatim, and OSRM are used via their public endpoints. Browser geolocation permission is required for auto-detected location; the app also supports manual location search as a fallback.
@@ -57,10 +63,13 @@ The deployed geocoder proxy accepts an optional `NOMINATIM_CONTACT` environment 
 
 - Two input modes: **By Distance** and **By Route**
 - Walking / driving travel mode toggle
-- Nearby places search via Overpass with client-side ranking, dedup, and 24h cache
+- Nearby places search via Overpass with client-side ranking, dedup, and 12h cache
 - Full geocoding flow (reverse + forward) with retry and edge-case handling
 - Route suggestions bucketed across 3 distance ranges, with closest matches highlighted
 - Free-text start/end places (any city or area) resolved via Nominatim when not in the nearby list
+- **Anchors** — pin routes you already know (Home → Work, the school run) and every distance gets framed against them: *"12 km is like doing your Home → Work route twice"*
+- **Landmark framing** — verified Lagos crossing spans (Third Mainland Bridge, Eko Bridge) fill in when you have no anchors of your own
+- **Distance ladder** — up to three framings at once, closest match first
 - Rich map interactions: pulsing location dot, distance radius ring, animated route drawing with glow trail, dashed straight-line comparison, marker bounce, fly-to/fit-bounds
 - Skeleton loaders and a map overlay card (route name, distance, time)
 - Mode, travel mode, and distance unit persisted to `localStorage`
@@ -68,23 +77,26 @@ The deployed geocoder proxy accepts an optional `NOMINATIM_CONTACT` environment 
 
 ## Project Status
 
-🟢 Functional, actively developed. Build passes (`vite build`, ~6.5s, 1903 modules).
+🟢 Functional, deployed, and actively developed. Build passes (`vite build`, ~10s, 1961 modules) and the unit suite is green (`npm test`, 99 tests).
 
 ### Known gaps
 
-- **No tests** — no test framework configured yet.
-- **No lint/format scripts** — only `dev`, `build`, `preview` exist in `package.json`.
-- **No CI/CD or deployment setup.**
-- **Bundle size** — MapLibre is heavy; being addressed via lazy-loading / code-splitting.
-- `distanceValue` is initialized as a number but set from raw input string (`event.target.value`) — works today, but should be normalized to avoid loose typing.
+- **No lint/format scripts** — `dev`, `build`, `preview`, `test`, `test:watch` are the only scripts in `package.json`.
+- **No CI** — tests only run when someone runs them locally.
+- **Bundle size** — MapLibre is heavy and the map is already lazy-loaded, but its chunk is still ~978 kB (~258 kB gzipped).
+- **Landmark spans cover Lagos only** — and only two crossings. Anything that can't be measured from real OSM geometry is left out rather than approximated (see the exclusions documented in `src/data/landmarks.js`).
+- **Straight-line vs road distance** — anchors and landmark spans are straight-line (matching "Base route"); the road distance comes from OSRM. They can differ meaningfully.
+- **The ladder can repeat a source** — e.g. "29% of the Eko Bridge" alongside "11% of the Third Mainland Bridge" are both fraction frames of the same journey.
 
 ## Project Structure
 
 ```
 src/
-  components/   # UI + map components
-  data/         # (currently empty — reserved for static data/config)
-  ...
+  components/   # UI + map components (anchor panel, ladder, map, inputs)
+  hooks/        # state and data hooks (context, places, geolocation, anchors)
+  utils/        # pure helpers + tests (distance, format, place matching, anchors)
+  data/         # curated static data (Lagos places, verified landmark spans)
+  lib/          # shared class strings
 ```
 
 ## Contributing
