@@ -3,7 +3,12 @@ import { useGeolocation } from "./useGeolocation";
 import { useNearbyPlaces } from "./useNearbyPlaces";
 import { useGeocodedPlace } from "./useGeocodedPlace";
 import { useAnchors } from "./useAnchors";
-import { buildAnchorFrames, framePhrase } from "../utils/anchor";
+import {
+    DEFAULT_FRAME_LIMIT,
+    buildAnchorFrames,
+    framePhrase,
+} from "../utils/anchor";
+import { landmarkFrames } from "../data/landmarks";
 import { haversineDistanceKm, toKilometers } from "../utils/distance";
 import { formatDistance, formatTime } from "../utils/format";
 import { mergePlaceLists } from "../utils/placeMatch";
@@ -253,8 +258,22 @@ export function useDistanceContext() {
     // "Base route" metric can't contradict each other.
     const anchorFrames = useMemo(() => {
         if (!routeDistanceKm) return [];
-        return buildAnchorFrames(routeDistanceKm, anchors);
-    }, [anchors, routeDistanceKm]);
+        const frames = buildAnchorFrames(routeDistanceKm, anchors);
+        // User anchors take precedence; landmarks only fill the remaining
+        // slots, and only inside the region the curated index covers (the same
+        // gate as curatedPlaces) so Lagos crossings are never presented as
+        // context for somewhere else.
+        if (!useCuratedFallback || frames.length >= DEFAULT_FRAME_LIMIT) {
+            return frames;
+        }
+        return [
+            ...frames,
+            ...landmarkFrames(routeDistanceKm, {
+                limit: DEFAULT_FRAME_LIMIT - frames.length,
+                excludeIds: frames.map((frame) => frame.anchor.id),
+            }),
+        ];
+    }, [anchors, routeDistanceKm, useCuratedFallback]);
 
     const primaryAnchorFrame = anchorFrames[0] ?? null;
 

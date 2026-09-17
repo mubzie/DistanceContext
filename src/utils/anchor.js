@@ -178,18 +178,21 @@ function formatTimes(times) {
 // Sentence fragment for the context summary, in the app's existing voice.
 export function framePhrase(frame) {
   const label = frame?.anchor?.label;
-  if (!label) return "";
+  // Anchors describe a possession ("your Home → Work route"); landmark frames
+  // carry their own subject ("the Third Mainland Bridge").
+  const subject = frame?.subject || (label ? `your ${label} route` : "");
+  if (!subject) return "";
 
   if (frame.kind === "times") {
     return frame.times === 2
-      ? `like doing your ${label} route twice`
-      : `like doing your ${label} route ${formatTimes(frame.times)} times`;
+      ? `like doing ${subject} twice`
+      : `like doing ${subject} ${formatTimes(frame.times)} times`;
   }
   if (frame.kind === "same") {
-    return `about the length of your ${label} route`;
+    return `about the length of ${subject}`;
   }
   if (frame.kind === "fraction") {
-    return `about ${frame.percent}% of your ${label} route`;
+    return `about ${frame.percent}% of ${subject}`;
   }
   return "";
 }
@@ -236,6 +239,9 @@ export function buildAnchorFrames(targetKm, anchors, options = {}) {
       anchor: entry.anchor,
       spanKm: entry.spanKm,
       multiple: entry.multiple,
+      // Frames describe a possession by default ("your Home → Work route");
+      // landmark frames override this with their own subject phrase.
+      subject: `your ${entry.anchor.label} route`,
       ...described,
     });
   }
