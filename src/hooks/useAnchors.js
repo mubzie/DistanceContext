@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MAX_ANCHORS,
   createAnchor,
@@ -35,7 +35,14 @@ export function useAnchors() {
   // Lazy initialiser so storage is read once per mount, like loadPrefs.
   const [anchors, setAnchors] = useState(loadAnchors);
 
+  // Mirror of the latest anchors so addAnchor can read the freshest list even
+  // if it runs before a re-render (a memoised callback with () => [] deps reads
+  // the closure value otherwise, which can lag the state). The mirror is kept
+  // in sync by the effect below; rendering and storage read the state itself.
+  const anchorsRef = useRef(anchors);
+
   useEffect(() => {
+    anchorsRef.current = anchors;
     persistAnchors(anchors);
   }, [anchors]);
 
@@ -47,17 +54,23 @@ export function useAnchors() {
       if (!candidate) {
         return { ok: false, reason: "invalid" };
       }
-      if (anchors.length >= MAX_ANCHORS) {
+      // Read the freshest list (the ref is updated on every commit) rather
+      // than the closure, so the guard and the distinct check never operate on
+      // a stale snapshot.
+      const current = anchorsRef.current;
+      if (current.length >= MAX_ANCHORS) {
         return { ok: false, reason: "limit" };
       }
-      if (!isDistinctAnchor(candidate, anchors)) {
+      if (!isDistinctAnchor(candidate, current)) {
         return { ok: false, reason: "duplicate" };
       }
 
-      setAnchors((current) => [...current, candidate]);
+      // Functional append stays race-safe; the mirror updates on the next
+      // render via the effect above.
+      setAnchors((prev) => [...prev, candidate]);
       return { ok: true, anchor: candidate };
     },
-    [anchors],
+    [],
   );
 
   const removeAnchor = useCallback((id) => {

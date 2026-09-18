@@ -2,6 +2,12 @@ const NOMINATIM_BASE_URL =
     process.env.NOMINATIM_BASE_URL || "https://nominatim.openstreetmap.org";
 const NOMINATIM_CONTACT = process.env.NOMINATIM_CONTACT;
 
+// Bail out of a slow/hung upstream instead of holding the serverless function
+// open until the platform execution cap. The client already times out at 10s
+// (src/utils/geocode.js), so the server conversing should abort first to return
+// a definitive 504 rather than a wall-clock timeout.
+const UPSTREAM_TIMEOUT_MS = 8000;
+
 function queryValue(value) {
     return Array.isArray(value) ? value[0] : value;
 }
@@ -77,15 +83,22 @@ export default async function handler(req, res) {
             Accept: "application/json",
             "User-Agent": `DistanceContext/1.0${NOMINATIM_CONTACT ? ` (${NOMINATIM_CONTACT})` : ""}`,
         };
-        const upstream = await fetch(
-            upstreamUrl(mode, {
-                q,
-                lat,
-                lon,
-                viewbox: queryValue(req.query?.viewbox),
-            }),
-            { headers },
-        );
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+        let upstream;
+        try {
+            upstream = await fetch(
+                upstreamUrl(mode, {
+                    q,
+                    lat,
+                    lon,
+                    viewbox: queryValue(req.query?.viewbox),
+                }),
+                { headers, signal: controller.signal },
+            );
+        } finally {
+            clearTimeout(timeout);
+        }
 
         if (upstream.status === 429) {
             const retryAfter = upstream.headers.get("retry-after");
@@ -124,7 +137,15 @@ export default async function handler(req, res) {
             data,
             "public, s-maxage=3600, stale-while-revalidate=86400",
         );
-    } catch {
+    } catch (err) {
+        // An abort from the timeout above is a definitive "took too long",
+        // distinct from a genuine upstream/network failure.
+        if (err?.name === "AbortError") {
+            return sendJson(res, 504, {
+                code: "TIMEOUT",
+                error: "Location search took too long. Try again.",
+            });
+        }
         return sendJson(res, 502, {
             code: "NETWORK_ERROR",
             error: "Location search is unavailable. Check your connection and try again.",
