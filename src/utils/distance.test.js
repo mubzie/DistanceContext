@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { haversineDistanceKm, toKilometers } from "./distance";
+import {
+  geojsonLineMidpoint,
+  haversineDistanceKm,
+  toKilometers,
+} from "./distance";
 
 describe("toKilometers", () => {
   it("passes km through unchanged", () => {
@@ -45,5 +49,43 @@ describe("haversineDistanceKm", () => {
     const near = haversineDistanceKm(origin, [6.6018, 3.3515]);
     const far = haversineDistanceKm(origin, [9.0579, 7.4951]);
     expect(far).toBeGreaterThan(near);
+  });
+});
+
+describe("geojsonLineMidpoint", () => {
+  it("returns null when there is no line to measure", () => {
+    expect(geojsonLineMidpoint(null)).toBeNull();
+    expect(geojsonLineMidpoint(undefined)).toBeNull();
+    expect(geojsonLineMidpoint([])).toBeNull();
+    expect(geojsonLineMidpoint([[1, 2]])).toBeNull();
+  });
+
+  it("bisects a two point line", () => {
+    expect(geojsonLineMidpoint([[3, 6], [5, 8]])).toEqual([4, 7]);
+  });
+
+  it("keeps GeoJSON [lng, lat] order", () => {
+    const [lng, lat] = geojsonLineMidpoint([
+      [3.1, 6.4],
+      [3.5, 6.8],
+    ]);
+    expect(lng).toBeCloseTo(3.3, 5);
+    expect(lat).toBeCloseTo(6.6, 5);
+  });
+
+  it("measures half-way by length, not by vertex index", () => {
+    // The first leg is ~11 km and the second ~0.1 km, so the true midpoint sits
+    // inside the first leg — the vertex order alone would wrongly return it.
+    const mid = geojsonLineMidpoint([
+      [0, 0],
+      [0, 0.1],
+      [0.001, 0.1],
+    ]);
+    expect(mid[1]).toBeCloseTo(0.05, 2);
+    expect(mid[0]).toBeCloseTo(0, 2);
+  });
+
+  it("falls back to the first point for a zero length line", () => {
+    expect(geojsonLineMidpoint([[1, 2], [1, 2]])).toEqual([1, 2]);
   });
 });

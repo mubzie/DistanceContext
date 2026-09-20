@@ -36,6 +36,7 @@ export default function App() {
                             mode={context.mode}
                             routeDistanceKm={context.routeDistanceKm}
                             displayDistanceKm={context.displayDistanceKm}
+                            actualRouteKm={context.actualRouteKm}
                             estimatedMinutes={context.estimatedMinutes}
                             travelMode={context.travelMode}
                             distanceUnit={context.distanceUnit}

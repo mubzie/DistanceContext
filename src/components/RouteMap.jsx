@@ -16,11 +16,16 @@ import {
 } from "./ui/card";
 import { Loader2, MapPin } from "lucide-react";
 import { MapOverlay } from "./MapOverlay";
+import { geojsonLineMidpoint } from "../utils/distance";
+import { formatDistance } from "../utils/format";
 
 // Sole source of the map's blue (routes, ring). MapLibre paint properties do
 // not resolve CSS variables, so it's duplicated as a Tailwind token
 // `--color-map-accent` in index.css for DOM-side classes; keep them in sync.
 const MAP_ACCENT = "#3b82f6";
+
+// The dashed straight-line comparison drawn between the route's endpoints.
+const STRAIGHT_LINE_COLOR = "#94a3b8";
 
 // Display-only fallback for the map before any GPS or manual location exists.
 // Deliberately neutral (world view) — never a Lagos default, so the map can't
@@ -61,9 +66,57 @@ function circleGeoJSON(lat, lng, radiusKm, points = 64) {
     };
 }
 
+// A distance pill pinned to a line, rendered as an HTML marker (the same
+// mechanism as the endpoint markers) so it needs no glyphs from the basemap.
+// The swatch reproduces the line's own style — dashed grey vs solid blue — so
+// the two labels stay tellable apart without relying on colour alone; the
+// words are kept for screen readers only. `pointer-events-none` keeps the
+// marker from swallowing map drags.
+function LineLabel({
+    color,
+    dashed = false,
+    srLabel,
+    distanceKm,
+    distanceUnit,
+    style,
+}) {
+    return (
+        <MarkerContent
+            className="pointer-events-none cursor-default"
+            style={style}
+        >
+            <div className="flex items-center gap-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-md backdrop-blur-md">
+                <svg
+                    width="16"
+                    height="4"
+                    viewBox="0 0 16 4"
+                    className="shrink-0"
+                    aria-hidden="true"
+                >
+                    <line
+                        x1="1"
+                        y1="2"
+                        x2="15"
+                        y2="2"
+                        stroke={color}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeDasharray={dashed ? "3 3" : undefined}
+                    />
+                </svg>
+                <span className="sr-only">{srLabel}</span>
+                <span className="tabular-nums text-foreground">
+                    {formatDistance(distanceKm, distanceUnit)}
+                </span>
+            </div>
+        </MarkerContent>
+    );
+}
+
 export function RouteMap({
     route,
     actualRouteCoords,
+    actualRouteKm,
     isRouteLoading,
     userLocation,
     activeLocation,
@@ -158,6 +211,35 @@ export function RouteMap({
           ]
         : [];
 
+    // Each label carries its own line's length: the dashed line is the endpoint
+    // span, the route line the road distance OSRM measured for it.
+    const straightLineKm = route?.baseDistanceKm ?? routeDistanceKm;
+    const routeLineKm = actualRouteKm ?? displayDistanceKm;
+    const hasRouteLine = actualRouteCoords?.length > 1;
+
+    // When the road barely deviates the dashed line hides under the route, so
+    // its label would only repeat the same number. Half a kilometre or 5% of
+    // the span counts as "the same line".
+    const linesCoincide =
+        hasRouteLine &&
+        straightLineKm > 0 &&
+        Math.abs(routeLineKm - straightLineKm) <
+            Math.max(0.5, straightLineKm * 0.05);
+
+    const straightLabelPos = route
+        ? geojsonLineMidpoint(straightLineCoords)
+        : null;
+    const routeLabelPos = hasRouteLine
+        ? geojsonLineMidpoint(actualRouteCoords)
+        : null;
+
+    // Reveal the route label as its line finishes drawing instead of floating
+    // ahead of the animation.
+    const routeLabelOpacity = Math.min(
+        1,
+        Math.max(0, (animProgress - 0.75) / 0.25),
+    );
+
     const showRing = mode === "distance" && routeDistanceKm > 0 && ringLocation;
     const ringData = showRing
         ? circleGeoJSON(ringLocation.lat, ringLocation.lng, routeDistanceKm)
@@ -201,7 +283,7 @@ export function RouteMap({
                         {route && (
                             <MapRoute
                                 coordinates={straightLineCoords}
-                                color="#94a3b8"
+                                color={STRAIGHT_LINE_COLOR}
                                 width={2}
                                 opacity={0.5}
                                 dashArray={[4, 6]}
@@ -223,6 +305,38 @@ export function RouteMap({
                                     opacity={0.9}
                                 />
                             </>
+                        )}
+                        {straightLabelPos && !linesCoincide && (
+                            <MapMarker
+                                longitude={straightLabelPos[0]}
+                                latitude={straightLabelPos[1]}
+                                offset={[0, -14]}
+                                className="pointer-events-none"
+                            >
+                                <LineLabel
+                                    color={STRAIGHT_LINE_COLOR}
+                                    dashed
+                                    srLabel="Straight line"
+                                    distanceKm={straightLineKm}
+                                    distanceUnit={distanceUnit}
+                                />
+                            </MapMarker>
+                        )}
+                        {routeLabelPos && (
+                            <MapMarker
+                                longitude={routeLabelPos[0]}
+                                latitude={routeLabelPos[1]}
+                                offset={[0, 16]}
+                                className="pointer-events-none"
+                            >
+                                <LineLabel
+                                    color={MAP_ACCENT}
+                                    srLabel="Route"
+                                    distanceKm={routeLineKm}
+                                    distanceUnit={distanceUnit}
+                                    style={{ opacity: routeLabelOpacity }}
+                                />
+                            </MapMarker>
                         )}
                         {route && (
                             <>
