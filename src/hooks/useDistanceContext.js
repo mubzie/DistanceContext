@@ -374,7 +374,16 @@ export function useDistanceContext() {
         // from) so the sentence agrees with itself; the road distance is still
         // reported separately in the metrics card.
         if (primaryAnchorFrame) {
-            return `${formatDistance(routeDistanceKm, distanceUnit)} is ${framePhrase(primaryAnchorFrame)}. It will take you about ${timeLabel}.`;
+            // The frame replaces the clause that normally carries the travel
+            // mode ("is like walking from A to B"), which orphans the estimate —
+            // "40 minutes" of what? Name the mode and tie the number to the
+            // route on the map: there it is the road distance, which is longer
+            // than the straight-line span the frame itself describes.
+            const timeClause =
+                travelMode === "walking"
+                    ? `Walking the route shown takes about ${timeLabel}.`
+                    : `Driving the route shown takes about ${timeLabel}.`;
+            return `${formatDistance(routeDistanceKm, distanceUnit)} is ${framePhrase(primaryAnchorFrame)}. ${timeClause}`;
         }
 
         const distanceLabel = formatDistance(displayDistanceKm, distanceUnit);
